@@ -1,0 +1,50 @@
+div
+{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+input
+{
+    align-self: stretch;
+    outline: none;
+    border: 2px solid var(--accent);
+    background-color: transparent;
+    padding: var(--default-padding);
+    color: var(--foreground-accent);
+    transition: var(--main-transition);
+    font-family: var(--font-family);
+    border-radius: 2rem;
+}
+
+input:focus
+{
+    border: 2px solid hsl(var(--hue), var(--saturation), var(--fg-pct));
+    background-color: var(--accent);
+}
+
+label
+{
+    display: flex;
+    flex-direction: column-reverse;
+    align-self: stretch;
+}
+
+span
+{
+    margin: 0;
+    transition: var(--main-transition);
+    transform-origin: top left;
+    pointer-events: none;
+    margin-left: 0.5rem;
+    display: flex;
+    flex: 1;
+    width: fit-content;
+}
+
+input[placeholder=" "]:not(:focus):placeholder-shown + span
+{
+    transform: translateY(150%) scale(1.25);
+    margin-left: 1rem;
+}

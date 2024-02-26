@@ -1,0 +1,58 @@
+.container
+{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+/* extending goes brrr */
+.copycat1
+{
+    z-index: var(--combobox-priorityZ);
+    background-color: var(--background-accent);
+    border: 2px solid var(--accent);
+    border-radius: 2rem;
+    padding: var(--default-padding);
+    transition: var(--main-transition);
+}
+
+.header
+{
+    display: flex;
+    cursor: pointer;
+    align-self: stretch;
+}
+
+.list
+{
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    right: 0%;
+    min-height: 50px;
+}
+
+.indicator
+{
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    right: 25px;
+    top: 28%;
+    bottom: 28%;
+    z-index: var(--combobox-priorityZ);
+    pointer-events: none;
+    transition: var(--main-transition);
+    color: var(--foreground-accent);
+}
+
+.entry
+{
+    cursor: pointer;
+    border: 2px solid var(--accent);
+    border-radius: 2rem;
+    margin: 0.3rem;
+    padding: var(--half-padding);
+    transition: var(--main-transition);
+}

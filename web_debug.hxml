@@ -1,0 +1,21 @@
+--debug
+
+-D html5
+-D desktop
+-D HXCPP_CHECK_POINTER
+-D HXCPP_STACK_LINE
+-D no-deprecation-warnings
+
+--class-path src
+--main Main
+--js ./bin/web/Debug/Main.js
+
+--library console.hx
+--library tink_await
+--library hscript
+
+--cmd xcopy .\assets .\bin\web\Debug\assets\ /E /C /I /Y
+--cmd xcopy .\html .\bin\web\Debug\ /E /C /I /Y
+
+--cmd cd ./bin/web/Debug
+--cmd http-server -c-1 --cors -p 8080

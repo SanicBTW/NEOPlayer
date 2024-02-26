@@ -1,0 +1,13 @@
+.basicTransition
+{
+    width: 100dvw;
+    height: 100dvh;
+    background-color: rgba(0, 0, 0, 1);
+    transition: var(--main-transition);
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    z-index: 99;
+}

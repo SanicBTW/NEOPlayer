@@ -1,0 +1,112 @@
+:root
+{
+    /* HSL */
+    --hue: 185;
+    --saturation: 20%;
+    --fg-pct: 70%;
+    --bg-pct: 20%;
+    --df-pct: 10%;
+
+    /* Accents */
+    --foreground-accent: hsl(var(--hue), var(--saturation), var(--fg-pct));
+    --background-accent: hsl(var(--hue), var(--saturation), var(--bg-pct));
+    --accent: hsl(var(--hue), var(--saturation), var(--df-pct));
+
+    /* Spacing */
+    --default-padding: 12px 16px;
+    --half-padding: 6px 8px;
+    --default-margin: auto 0.25rem 0.25rem auto;
+    --textbox-offset: 0.625;
+    --list-width: 660px;
+
+    /* Misc */
+    --font-family: "Roboto Flex";
+    --main-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --combobox-priorityZ: 1;
+    --combobox-topZ: 2;
+}
+
+*
+{
+    -webkit-tap-highlight-color: transparent;
+    font-family: var(--font-family);
+}
+
+@font-face 
+{
+    font-family: 'Roboto Flex';
+    src: url('../assets/RobotoFlex-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body
+{
+    width: 100dvw;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-accent);
+    color: var(--foreground-accent);
+    accent-color: var(--accent);
+    display: flex;
+    user-select: none;
+}
+
+button
+{
+    background-color: transparent;
+    border-radius: 2rem;
+    border: 2px solid var(--accent);
+    color: var(--foreground-accent);
+    padding: var(--default-padding);
+    transition: var(--main-transition);
+    cursor: pointer;
+    transform-origin: center;
+}
+
+button:hover
+{
+    transform: scale(0.98);
+}
+
+button:active
+{
+    transform: scale(0.95);
+    background-color: var(--accent);
+}
+
+button:disabled
+{
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+::-webkit-scrollbar
+{
+    width: 10px;
+    transition: var(--main-transition);
+}
+
+::-webkit-scrollbar-track
+{
+    background: transparent; 
+}
+
+::-webkit-scrollbar-thumb
+{
+    background: var(--foreground-accent);
+    border-radius: 2rem; 
+}
+
+::-webkit-scrollbar-thumb:hover
+{
+    background: hsl(var(--hue), var(--saturation), 75%); 
+}
+
+iframe
+{
+    display: flex;
+    width: 100%;
+    border: none;
+}
