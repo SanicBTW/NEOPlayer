@@ -61,7 +61,7 @@ class Notification
 					if (img != null && img.indexOf("blob") > -1)
 					{
 						URL.revokeObjectURL(img);
-						Console.debug('Revoked Blob URL ($img)');
+						Console.debug('Revoked Image Blob URL ($img)');
 					}
 
 					HTML.window().clearTimeout(timer);

@@ -1,12 +1,5 @@
 package audio;
 
-enum abstract PlaybackState(String) to String from String
-{
-	var NONE = "none";
-	var PLAYING = "playing";
-	var PAUSED = "paused";
-}
-
 typedef PositionState =
 {
 	var duration:Float;

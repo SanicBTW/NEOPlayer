@@ -3,6 +3,7 @@ package;
 import audio.MediaMetadata;
 import js.Browser;
 import js.Syntax;
+import js.html.AudioElement;
 import js.html.File;
 import js.html.HTMLDocument;
 import js.html.InputElement;
@@ -73,20 +74,6 @@ class HTML
 
 	}
 
-	public static function setMediaSessionState(state:PlaybackState)
-	{
-		Syntax.code('
-			if (!"mediaSession" in navigator)
-			{
-				console.log("Media Session API not available");
-				return;
-			}
-
-			navigator.mediaSession.playbackState = {0};
-		', state);
-
-	}
-
 	public static function updatePositionState(state:PositionState)
 	{
 		Syntax.code('
@@ -97,7 +84,7 @@ class HTML
 			}
 
 			navigator.mediaSession.setPositionState({
-				duration: {0}.position,
+				duration: {0}.duration,
 				playbackRate: {0}.playbackRate,
 				position: {0}.position
 			});
@@ -122,6 +109,24 @@ class HTML
 			}
 
 			onFile(input.files[0]);
+		});
+	}
+
+	public static function addMusicListeners(music:AudioElement)
+	{
+		updatePositionState({
+			duration: 0,
+			position: 0,
+			playbackRate: 1
+		});
+
+		music.addEventListener('timeupdate', () ->
+		{
+			updatePositionState({
+				duration: music.duration,
+				position: music.currentTime,
+				playbackRate: music.playbackRate
+			});
 		});
 	}
 

@@ -12,13 +12,18 @@ enum abstract Tables(String) to String from String
 	var SCRIPTS = "scripts";
 }
 
+typedef BlobObject =
+{
+	var blob:Blob;
+	var mimeType:String;
+}
+
 typedef SongObject =
 {
 	var name:String;
-	var data:Blob;
-	var size:Int;
-	var cover_art:Blob;
-	var cover_background:Blob;
+	var data:BlobObject;
+	var cover_art:BlobObject;
+	var cover_background:BlobObject;
 	var author:String;
 	var favourite:Bool;
 }
@@ -33,6 +38,7 @@ typedef ScriptObject =
 class VFS
 {
 	public static final intervalArray:Array<String> = ['B', 'KB', 'MB', 'GB'];
+	public static final name:String = "S_VirtualFS";
 
 	private var request:OpenDBRequest;
 	private var connection:Database;
@@ -40,7 +46,7 @@ class VFS
 	private var version:Int;
 	private var created:Bool = false;
 
-	public function new(version:Int = 1)
+	public function new(version:Int = 2)
 	{
 		this.version = version;
 	}
@@ -52,7 +58,7 @@ class VFS
 
 		return Promise.irreversible((resolve, reject) ->
 		{
-			request = HTML.window().indexedDB.open('S_VirtualFS', version);
+			request = HTML.window().indexedDB.open(name, version);
 
 			request.addEventListener('error', () ->
 			{
@@ -67,40 +73,43 @@ class VFS
 			request.addEventListener('upgradeneeded', (ev) ->
 			{
 				var db:Database = ev.target.result;
-				// TODO: When upgrading copy the old data and try to move it to the new version of the database
+				var oldVersion:Int = ev.oldVersion;
+				var newVersion:Int = ev.newVersion;
+				Console.debug('Version $oldVersion -> Version $newVersion');
+
+				// For some reason on iOS the upgrade is not working lmao
 				/*
-					if (db.objectStoreNames.contains("songs"))
+					if (db.objectStoreNames.contains(Tables.SONGS))
 					{
-						var transaction:Transaction = db.transaction('songs', READONLY);
-						trace(transaction);
-						reject('Failed to upgrade on existing filesystem');
-						//db.deleteObjectStore("filesystem");
+						if (oldVersion == 1 && newVersion == 2)
+						{
+							var transaction:Transaction = db.transaction(Tables.SONGS, READONLY);
+							transaction.objectStore(Tables.SONGS).deleteIndex("size");
+							Console.success('Updated the Database to $newVersion');
+						}
 				}*/
 
 				if (!db.objectStoreNames.contains(Tables.SONGS))
 				{
 					var store:ObjectStore = db.createObjectStore(Tables.SONGS);
 
-					// store.createIndex('data', 'data'); // BLOB
-					store.createIndex('size', 'size'); // To get the size of the song
-					// store.createIndex('cover_art', 'cover_art'); // BLOB
-					// store.createIndex('cover_background', 'cover_background'); // BLOB
 					store.createIndex('author', 'author'); // String - author or artist
 					store.createIndex('favourite', 'favourite'); // Bool, sort favs??
 				}
 
 				if (!db.objectStoreNames.contains(Tables.SCRIPTS))
 				{
-					// experimental, uses hscript
+					// experimental, uses hscript, maybe if i do Luau bindings for JS ill add it too, but I want to make the bindings for native too
 					var store:ObjectStore = db.createObjectStore(Tables.SCRIPTS);
 
-					// store.createIndex('data', 'data'); // BLOB
 					store.createIndex('source', 'source'); // From where it is
 				}
 			});
 
 			request.addEventListener('success', () ->
 			{
+				HTML.localStorage().removeItem("idb-deleted");
+				HTML.localStorage().removeItem("idb-del-time");
 				connection = request.result;
 				created = true;
 				resolve(this);
@@ -221,18 +230,5 @@ class VFS
 	public function destroy():Void
 	{
 		connection.close();
-	}
-
-	public function makeSong(song:String, author:String, data:Blob, ?coverArt:Blob, ?coverBG:Blob):SongObject
-	{
-		return {
-			name: song,
-			data: data,
-			size: data.size,
-			cover_art: coverArt, // Will use the default music png
-			cover_background: coverBG, // Will show a background color based off the cover art
-			author: author,
-			favourite: false // Start as false since the user will decide it
-		};
 	}
 }

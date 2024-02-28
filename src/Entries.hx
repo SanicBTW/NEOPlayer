@@ -1,16 +1,14 @@
 package;
 
 import VFS.SongObject;
-import audio.Context;
-import audio.MediaMetadata.MediaArtwork;
 import audio.MediaMetadata;
-import audio.Sound;
 import elements.*;
 import haxe.Json;
 import haxe.ds.DynamicMap;
 import js.Syntax;
 import js.html.Blob;
 import js.html.File;
+import js.html.SourceElement;
 import js.html.URL;
 
 // Class dedicated to generate entries for the list
@@ -88,24 +86,28 @@ class Entries
 
 			var entry:MEntry = new MEntry(name, () ->
 			{
-				var music:Sound = Main.smusic;
-				if (music.playing)
-					music.stop();
+				var srcEl:SourceElement = HTML.dom().createSourceElement();
 
-				music.loadFromBlob(song.data);
-				music.play(0, true);
-				HTML.setMediaSessionState(PLAYING);
-
-				if (Main.music.src != null)
+				if (Main.music.firstElementChild != null)
 				{
+					var objURL:String = Main.music.firstElementChild.getAttribute("objurl");
 					Main.music.pause();
-					URL.revokeObjectURL(Main.music.src);
+					URL.revokeObjectURL(objURL);
+					Console.debug('Revoked Audio Blob URL ($objURL)');
+
+					var copycat = Main.music.cloneNode();
+					Main.music.replaceWith(copycat);
+					Main.music = cast copycat;
+					HTML.addMusicListeners(Main.music);
 				}
 
-				Main.music.src = URL.createObjectURL(song.data);
+				srcEl.src = URL.createObjectURL(song.data.blob);
+				srcEl.type = song.data.mimeType;
+				srcEl.setAttribute("objurl", srcEl.src);
+				Main.music.append(srcEl);
 				Main.music.play();
 
-				new Notification('Playing ${name}', 'by ${song.author}', (song.cover_art != null) ? URL.createObjectURL(song.cover_art) : null);
+				new Notification('Playing ${name}', 'by ${song.author}', (song.cover_art != null) ? URL.createObjectURL(song.cover_art.blob) : null);
 
 				var meta:MediaMetadata = {
 					title: name,
@@ -114,34 +116,25 @@ class Entries
 					handlers: [
 						{
 							type: PLAY,
-							func: () ->
-							{
-								Main.music.play();
-								HTML.setMediaSessionState(PLAYING);
-							}
+							func: () -> Main.music.play()
 						},
 						{
 							type: PAUSE,
-							func: () ->
-							{
-								Main.music.pause();
-								HTML.setMediaSessionState(PAUSED);
-							}
+							func: () -> Main.music.pause()
 						}
 					]
 				};
 
 				if (song.cover_art != null)
 				{
-					var urlObj:String = URL.createObjectURL(song.cover_art);
-					var type:String = 'image/png';
+					var urlObj:String = URL.createObjectURL(song.cover_art.blob);
 
 					// Force resolutions in order to make the Media Session API work properly
 					for (size in ["96x96", "128x128", "192x192", "256x256", "384x384", "512x512"])
 					{
 						meta.artwork.push({
 							src: urlObj,
-							type: type,
+							type: song.cover_art.mimeType,
 							sizes: size
 						});
 					}
@@ -161,7 +154,6 @@ class Entries
 		var songData:SongObject = {
 			name: "",
 			data: null,
-			size: 0,
 			cover_art: null,
 			cover_background: null,
 			author: "",
@@ -170,8 +162,10 @@ class Entries
 
 		function songConvertDone(blob:Blob)
 		{
-			songData.data = blob;
-			songData.size = blob.size;
+			songData.data = {
+				blob: blob,
+				mimeType: file.type
+			};
 
 			Console.debug("Song converted (File -> Blob)!");
 		}
@@ -200,30 +194,36 @@ class Entries
 			new MEntry("Assets", true),
 			new MEntry("Cover Art", () ->
 			{
-				function cartConvertDone(blob:Blob)
-				{
-					songData.cover_art = blob;
-
-					Console.debug("Cover Art converted (File -> Blob)!");
-				}
-
 				HTML.fileSelect("image/*", (file) ->
 				{
+					function cartConvertDone(blob:Blob)
+					{
+						songData.cover_art = {
+							blob: blob,
+							mimeType: file.type
+						};
+
+						Console.debug("Cover Art converted (File -> Blob)!");
+					}
+
 					Syntax.code("new Response({0}.stream()).blob().then((blob) => { {1}(blob) })", file, cartConvertDone);
 				});
 			}),
 			new MEntry("Cover Background", () ->
 			{
-				function cbgConvertDone(blob:Blob)
-				{
-					songData.cover_background = blob;
-
-					Console.debug("Cover Background converted (File -> Blob)!");
-				}
-
 				HTML.fileSelect("image/*", (file) ->
 				{
-					Syntax.code("new Response({0}.stream()).blob().then((blob) => { {1}(blob) })", file, cbgConvertDone);
+					function cbgConvertDone(blob:Blob)
+					{
+						songData.cover_background = {
+							blob: blob,
+							mimeType: file.type
+						};
+
+						Console.debug("Cover Background converted (File -> Blob)!");
+					}
+
+					Syntax.code("new Response({0}.stream()).blob().then((blob) => { {1}(blob, {0}.type) })", file, cbgConvertDone);
 				});
 			}),
 			new MEntry("Finish", () ->
@@ -235,7 +235,8 @@ class Entries
 					{
 						BasicTransition.play((?_) ->
 						{
-							new Notification("Finished importing", 'New song', (songData.cover_art != null) ? URL.createObjectURL(songData.cover_art) : null);
+							new Notification("Finished importing", 'New song',
+								(songData.cover_art != null) ? URL.createObjectURL(songData.cover_art.blob) : null);
 							musicList.refresh(defaultEntries(musicList));
 						});
 					}
@@ -295,7 +296,7 @@ class Entries
 
 	public static function getAbout(musicList:MList):Array<MEntry>
 	{
-		var strUsage:MEntry = new MEntry("Storage Usage: ?");
+		var strUsage:MEntry = new MEntry("Storage Usage: ?", true);
 
 		Main.storage.entries(SONGS).handle((out) ->
 		{
@@ -308,16 +309,15 @@ class Entries
 				if (name == "length")
 					break;
 
-				// deprecate song.size and let the data (blob).size
 				var song:SongObject = song;
-				size += song.size;
+				size += song.data.blob.size;
 
 				// Make a section where it details properly where the entry displays tthe storage quota it uses??
 				if (song.cover_art != null)
-					size += song.cover_art.size;
+					size += song.cover_art.blob.size;
 
 				if (song.cover_background != null)
-					size += song.cover_background.size;
+					size += song.cover_background.blob.size;
 			}
 
 			while (size > 1000 && idx < VFS.intervalArray.length - 1)
@@ -340,7 +340,32 @@ class Entries
 				});
 			}),
 			new MEntry("IndexedDB Stats", true),
-			strUsage
+			strUsage,
+			new MEntry("Delete IndexedDB", () ->
+			{
+				function confirmation(state:Bool)
+				{
+					if (!state)
+						return;
+
+					// Close it to proceed with deletion
+					Main.storage.destroy();
+
+					var req = HTML.window().indexedDB.deleteDatabase(VFS.name);
+					req.addEventListener('error', () ->
+					{
+						Console.error('Failed to delete IndexedDB: ${req.error.message}');
+					});
+					req.addEventListener('success', () ->
+					{
+						HTML.localStorage().setItem("idb-deleted", "true");
+						HTML.localStorage().setItem("idb-del-time", Std.string(Date.now()));
+						HTML.window().location.reload();
+					});
+				}
+				Syntax.code('{0}(confirm({1}))', confirmation,
+					"Are you sure you want to proceed?\nAll the data inside the database will be deleted and won't be accessible again");
+			})
 		];
 	}
 }
