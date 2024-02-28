@@ -11,11 +11,21 @@ class MList
 
 	public function new(entries:Array<MEntry>)
 	{
-		container.classList.add('overflow-hidden', 'flex', 'w-[${Styling.getComputedRoot().getPropertyValue("--list-width")}]', 'fixed', 'right-0',
-			'rounded-xl', 'h-dvh');
+		// 'items-flex-start' pending to check
+		if (HTML.detectDevice() == DESKTOP)
+		{
+			container.classList.add('w-[${Styling.getComputedRoot().getPropertyValue("--list-width")}]');
+			container.style.margin = "4rem";
+		}
+		else
+		{
+			container.classList.add('w-dvw');
+			cEntries.style.width = "100%";
+		}
+
+		container.classList.add('flex', 'fixed', 'right-0', 'rounded-xl', 'h-dvh',);
 		container.style.backgroundColor = "hsl(var(--hue), var(--saturation), 15%)";
 		container.style.transition = "var(--main-transition)";
-		container.style.margin = "4rem";
 		container.style.marginTop = "12rem";
 
 		cEntries.classList.add('overflow-x-hidden', 'overflow-y-scroll');
@@ -38,6 +48,9 @@ class MList
 		{
 			cEntries.append(entry.container);
 		}
+
+		if (HTML.detectDevice() == MOBILE)
+			cEntries.style.width = "100%";
 
 		// bro wtf :sob:
 		haxe.Timer.delay(() ->

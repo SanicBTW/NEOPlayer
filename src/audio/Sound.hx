@@ -88,8 +88,11 @@ class Sound
 
 		_source = Context._ctx.createBufferSource();
 		_source.buffer = _buffer;
-
-		_source.connect(Context._ctx.destination);
+		@:privateAccess
+		if (Main.context._dstNode != null)
+			_source.connect(Main.context._dstNode);
+		else
+			_source.connect(Context._ctx.destination);
 
 		_source.loop = loop;
 		_source.start(startFrom);

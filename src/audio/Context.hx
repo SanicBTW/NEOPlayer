@@ -1,11 +1,17 @@
 package audio;
 
+import js.html.AudioElement;
 import js.html.audio.AudioContext;
+import js.html.audio.MediaElementAudioSourceNode;
+import js.html.audio.MediaStreamAudioDestinationNode;
 
 @:allow(audio.Sound)
 class Context
 {
 	private static var _ctx:AudioContext;
+
+	private var _srcNode:MediaElementAudioSourceNode;
+	private var _dstNode:MediaStreamAudioDestinationNode;
 
 	public function new()
 	{
@@ -26,5 +32,14 @@ class Context
 				_ctx.resume();
 			}
 		});
+	}
+
+	public function bindTo(element:AudioElement)
+	{
+		_srcNode = _ctx.createMediaElementSource(element);
+		_dstNode = _ctx.createMediaStreamDestination();
+
+		_srcNode.connect(_dstNode);
+		element.srcObject = _dstNode.stream;
 	}
 }

@@ -1,11 +1,13 @@
 package;
 
-import elements.*;
+import audio.MediaMetadata;
 import js.Browser;
+import js.Syntax;
 import js.html.File;
 import js.html.HTMLDocument;
 import js.html.InputElement;
 import js.html.Storage;
+import js.html.URL;
 import js.html.Window;
 
 enum DeviceType
@@ -25,8 +27,85 @@ class HTML
 	public static function localStorage():Storage
 		return Browser.getLocalStorage();
 
+	// Move to Audio Soon
+	// https://stackoverflow.com/a/61035921
+	private static var _prevMeta:Null<MediaMetadata> = null;
+
+	public static function setMediaMetadata(meta:MediaMetadata)
+	{
+		if (_prevMeta != meta)
+		{
+			// revoke created obj urls just in case
+			if (_prevMeta != null && _prevMeta.artwork != null)
+			{
+				for (art in _prevMeta.artwork)
+				{
+					URL.revokeObjectURL(art.src);
+				}
+			}
+			_prevMeta = meta;
+		}
+
+		Syntax.code('
+			if (!"mediaSession" in navigator)
+			{
+				console.log("Media Session API not available");
+				return;
+			}
+
+			var artwork = [];
+			{0}.artwork.forEach((art) =>
+			{
+				artwork.push(art);
+			});
+
+			navigator.mediaSession.metadata = new MediaMetadata({
+				title: {0}.title,
+				artist: {0}.author,
+				artwork: artwork
+			});
+
+			{0}.handlers.forEach((handler) => 
+			{
+				navigator.mediaSession.setActionHandler(handler.type, function() { handler.func(); });
+			});
+		', meta);
+
+	}
+
+	public static function setMediaSessionState(state:PlaybackState)
+	{
+		Syntax.code('
+			if (!"mediaSession" in navigator)
+			{
+				console.log("Media Session API not available");
+				return;
+			}
+
+			navigator.mediaSession.playbackState = {0};
+		', state);
+
+	}
+
+	public static function updatePositionState(state:PositionState)
+	{
+		Syntax.code('
+			if (!"mediaSession" in navigator)
+			{
+				console.log("Media Session API not available");
+				return;
+			}
+
+			navigator.mediaSession.setPositionState({
+				duration: {0}.position,
+				playbackRate: {0}.playbackRate,
+				position: {0}.position
+			});
+		', state);
+
+	}
+
 	// Opens a quick file select window and executes the provided callbacks
-	// Accepts audio and json, json for the future quick metadata import
 	public static function fileSelect(accept:String, onFile:File->Void)
 	{
 		var input:InputElement = dom().createInputElement();

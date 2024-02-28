@@ -50,13 +50,13 @@ class VFS
 		if (created)
 			return Promise.resolve(this);
 
-		return new Promise<VFS>((resolve, reject) ->
+		return Promise.irreversible((resolve, reject) ->
 		{
 			request = HTML.window().indexedDB.open('S_VirtualFS', version);
 
 			request.addEventListener('error', () ->
 			{
-				reject(new Error(I_am_a_Teapot, request.error.message));
+				reject(new Error(InternalError, request.error.message));
 			});
 
 			request.addEventListener('blocked', () ->
@@ -105,20 +105,18 @@ class VFS
 				created = true;
 				resolve(this);
 			});
-
-			return null;
 		});
 	}
 
 	@async public function set(table:Tables, key:String, value:Any):Promise<Bool>
 	{
 		if (!created)
-			return Promise.reject(new Error(I_am_a_Teapot, "Database not connected yet"));
+			return Promise.reject(new Error(InternalError, "Database not connected yet"));
 
 		if (value == null)
 			return remove(table, key);
 
-		return new Promise<Bool>((resolve, reject) ->
+		return Promise.irreversible((resolve, reject) ->
 		{
 			var res:Request = connection.transaction(table, READWRITE).objectStore(table).put(value, key);
 
@@ -129,19 +127,17 @@ class VFS
 
 			res.addEventListener('error', () ->
 			{
-				reject(new Error(I_am_a_Teapot, res.error.message));
+				reject(new Error(InternalError, res.error.message));
 			});
-
-			return null;
 		});
 	}
 
 	@async public function remove(table:Tables, key:String):Promise<Bool>
 	{
 		if (!created)
-			return Promise.reject(new Error(I_am_a_Teapot, "Database not connected yet"));
+			return Promise.reject(new Error(InternalError, "Database not connected yet"));
 
-		return new Promise<Bool>((resolve, reject) ->
+		return Promise.irreversible((resolve, reject) ->
 		{
 			var res:Request = connection.transaction(table, READWRITE).objectStore(table).delete(key);
 
@@ -152,19 +148,17 @@ class VFS
 
 			res.addEventListener('error', () ->
 			{
-				reject(new Error(I_am_a_Teapot, res.error.message));
+				reject(new Error(InternalError, res.error.message));
 			});
-
-			return null;
 		});
 	}
 
 	@async public function get(table:Tables, key:String):Promise<Any>
 	{
 		if (!created)
-			return Promise.reject(new Error(I_am_a_Teapot, "Database not connected yet"));
+			return Promise.reject(new Error(InternalError, "Database not connected yet"));
 
-		return new Promise<Any>((resolve, reject) ->
+		return Promise.irreversible((resolve, reject) ->
 		{
 			var res:Request = connection.transaction(table, READWRITE).objectStore(table).get(key);
 
@@ -176,16 +170,19 @@ class VFS
 					resolve(null);
 			});
 
-			return null;
+			res.addEventListener('error', () ->
+			{
+				reject(new Error(InternalError, res.error.message));
+			});
 		});
 	}
 
 	@async public function entries(table:Tables):Promise<DynamicMap<String, Any>>
 	{
 		if (!created)
-			return Promise.reject(new Error(I_am_a_Teapot, "Database not connected yet"));
+			return Promise.reject(new Error(InternalError, "Database not connected yet"));
 
-		return new Promise<DynamicMap<String, Any>>((resolve, reject) ->
+		return Promise.irreversible((resolve, reject) ->
 		{
 			var tempMap:DynamicMap<String, Any> = new DynamicMap();
 			var length:Int = 0;
@@ -214,7 +211,10 @@ class VFS
 				});
 			});
 
-			return null;
+			res.addEventListener('error', () ->
+			{
+				reject(new Error(InternalError, res.error.message));
+			});
 		});
 	}
 

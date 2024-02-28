@@ -3,6 +3,7 @@ package elements;
 import js.html.DivElement;
 import js.html.ImageElement;
 import js.html.ParagraphElement;
+import js.html.URL;
 
 // From the old BasicMusicPlayer v5 (Never released), I have another Notification code but its from my JS Chat Project so uhhh too lazy
 // Also this class uses tailwind, very cool
@@ -26,7 +27,7 @@ class Notification
 		container.style.opacity = "0";
 
 		image.classList.add('max-w-[80px]', 'max-h-[80px]', 'aspect-square', 'relative', 'pointer-events-none');
-		image.src = img != null ? 'assts/$img.png' : "assets/album-placeholder.png";
+		image.src = img != null ? img : "assets/album-placeholder.png";
 
 		textContainer.classList.add('flex', 'flex-wrap', 'flex-col', 'relative', 'mx-6');
 
@@ -56,6 +57,13 @@ class Notification
 				timer = HTML.window().setTimeout(() ->
 				{
 					container.remove();
+
+					if (img != null && img.indexOf("blob") > -1)
+					{
+						URL.revokeObjectURL(img);
+						Console.debug('Revoked Blob URL ($img)');
+					}
+
 					HTML.window().clearTimeout(timer);
 				}, 1100);
 			}, duration);

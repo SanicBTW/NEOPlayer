@@ -2,6 +2,8 @@ package;
 
 import VFS.SongObject;
 import audio.Context;
+import audio.MediaMetadata.MediaArtwork;
+import audio.MediaMetadata;
 import audio.Sound;
 import elements.*;
 import haxe.Json;
@@ -9,6 +11,7 @@ import haxe.ds.DynamicMap;
 import js.Syntax;
 import js.html.Blob;
 import js.html.File;
+import js.html.URL;
 
 // Class dedicated to generate entries for the list
 class Entries
@@ -33,7 +36,10 @@ class Entries
 			}),
 			new MEntry('Import song', () ->
 			{
-				HTML.fileSelect("audio/*,.json", (file) ->
+				// Accepts audio and json, json for the future quick metadata import
+				// ,.json
+				var accepts:String = HTML.detectDevice() == DESKTOP ? "audio/*" : "audio/mpeg,audio/wav,audio/ogg,audio/aac,audio/m4a,audio/x-m4a";
+				HTML.fileSelect(accepts, (file) ->
 				{
 					BasicTransition.play((?_) ->
 					{
@@ -82,14 +88,66 @@ class Entries
 
 			var entry:MEntry = new MEntry(name, () ->
 			{
-				var music:Sound = Main.music;
+				var music:Sound = Main.smusic;
 				if (music.playing)
 					music.stop();
 
 				music.loadFromBlob(song.data);
 				music.play(0, true);
+				HTML.setMediaSessionState(PLAYING);
 
-				new Notification('Playing ${name}', 'by ${song.author}');
+				if (Main.music.src != null)
+				{
+					Main.music.pause();
+					URL.revokeObjectURL(Main.music.src);
+				}
+
+				Main.music.src = URL.createObjectURL(song.data);
+				Main.music.play();
+
+				new Notification('Playing ${name}', 'by ${song.author}', (song.cover_art != null) ? URL.createObjectURL(song.cover_art) : null);
+
+				var meta:MediaMetadata = {
+					title: name,
+					author: song.author,
+					artwork: [],
+					handlers: [
+						{
+							type: PLAY,
+							func: () ->
+							{
+								Main.music.play();
+								HTML.setMediaSessionState(PLAYING);
+							}
+						},
+						{
+							type: PAUSE,
+							func: () ->
+							{
+								Main.music.pause();
+								HTML.setMediaSessionState(PAUSED);
+							}
+						}
+					]
+				};
+
+				if (song.cover_art != null)
+				{
+					var urlObj:String = URL.createObjectURL(song.cover_art);
+					var type:String = 'image/png';
+
+					// Force resolutions in order to make the Media Session API work properly
+					for (size in ["96x96", "128x128", "192x192", "256x256", "384x384", "512x512"])
+					{
+						meta.artwork.push({
+							src: urlObj,
+							type: type,
+							sizes: size
+						});
+					}
+				}
+
+				HTML.setMediaMetadata(meta);
 			});
 
 			ret.push(entry);
@@ -110,20 +168,20 @@ class Entries
 			favourite: false
 		};
 
-		function jsConvertDone(blob:Blob)
+		function songConvertDone(blob:Blob)
 		{
 			songData.data = blob;
 			songData.size = blob.size;
 
-			Console.debug("Data converted (File -> Blob)!");
+			Console.debug("Song converted (File -> Blob)!");
 		}
 
-		Syntax.code("new Response({0}.stream()).blob().then((blob) => { {1}(blob) })", file, jsConvertDone);
+		Syntax.code("new Response({0}.stream()).blob().then((blob) => { {1}(blob) })", file, songConvertDone);
 
 		return [
 			new MEntry("Cancel import", () ->
 			{
-				file = null;
+				songData = null;
 				Console.debug("User canceled the song import");
 				BasicTransition.play((?_) ->
 				{
@@ -140,11 +198,33 @@ class Entries
 				songData.author = author;
 			}),
 			new MEntry("Assets", true),
-			new MEntry("Cover Art", () -> {
-				// pending
+			new MEntry("Cover Art", () ->
+			{
+				function cartConvertDone(blob:Blob)
+				{
+					songData.cover_art = blob;
+
+					Console.debug("Cover Art converted (File -> Blob)!");
+				}
+
+				HTML.fileSelect("image/*", (file) ->
+				{
+					Syntax.code("new Response({0}.stream()).blob().then((blob) => { {1}(blob) })", file, cartConvertDone);
+				});
 			}),
-			new MEntry("Cover Background", () -> {
-				// pending
+			new MEntry("Cover Background", () ->
+			{
+				function cbgConvertDone(blob:Blob)
+				{
+					songData.cover_background = blob;
+
+					Console.debug("Cover Background converted (File -> Blob)!");
+				}
+
+				HTML.fileSelect("image/*", (file) ->
+				{
+					Syntax.code("new Response({0}.stream()).blob().then((blob) => { {1}(blob) })", file, cbgConvertDone);
+				});
 			}),
 			new MEntry("Finish", () ->
 			{
@@ -155,7 +235,7 @@ class Entries
 					{
 						BasicTransition.play((?_) ->
 						{
-							new Notification("Finished importing", 'New song');
+							new Notification("Finished importing", 'New song', (songData.cover_art != null) ? URL.createObjectURL(songData.cover_art) : null);
 							musicList.refresh(defaultEntries(musicList));
 						});
 					}
@@ -228,8 +308,16 @@ class Entries
 				if (name == "length")
 					break;
 
+				// deprecate song.size and let the data (blob).size
 				var song:SongObject = song;
 				size += song.size;
+
+				// Make a section where it details properly where the entry displays tthe storage quota it uses??
+				if (song.cover_art != null)
+					size += song.cover_art.size;
+
+				if (song.cover_background != null)
+					size += song.cover_background.size;
 			}
 
 			while (size > 1000 && idx < VFS.intervalArray.length - 1)

@@ -56,16 +56,15 @@ class Network
 
 		if (queueEntry.inProgress)
 		{
-			return new Promise((res, _) ->
+			return Promise.irreversible((res, _) ->
 			{
 				queueEntry.queue.push(res);
-				return null;
 			});
 		}
 
 		queueEntry.inProgress = true;
 
-		return new Promise<T>((res, rej) ->
+		return Promise.irreversible((resolve, reject) ->
 		{
 			var req:Http = new Http(file);
 			req.async = true;
@@ -73,19 +72,17 @@ class Network
 			req.onData = function(c)
 			{
 				_cache[file] = c;
-				res(cast c);
+				resolve(cast c);
 				cleanQueue(c, file, queueEntry);
 			}
 
 			req.onError = function(err)
 			{
-				trace(err);
-				rej(new Error(I_am_a_Teapot, err));
+				Console.error(err);
+				reject(new Error(InternalError, err));
 			}
 
 			req.request();
-
-			return null;
 		});
 	}
 
@@ -98,35 +95,32 @@ class Network
 
 		if (queueEntry.inProgress)
 		{
-			return new Promise((res, _) ->
+			return Promise.irreversible((res, _) ->
 			{
 				queueEntry.queue.push(res);
-				return null;
 			});
 		}
 
 		queueEntry.inProgress = true;
 
-		return new Promise<T>((res, rej) ->
+		return Promise.irreversible((resolve, reject) ->
 		{
 			var req:Http = new Http(file);
 			req.async = true;
 			req.onBytes = function(c)
 			{
 				_cache[file] = c;
-				res(cast c);
+				resolve(cast c);
 				cleanQueue(c, file, queueEntry);
 			}
 
 			req.onError = function(err)
 			{
-				trace(err);
-				rej(new Error(I_am_a_Teapot, err));
+				Console.error(err);
+				reject(new Error(InternalError, err));
 			}
 
 			req.request();
-
-			return null;
 		});
 	}
 

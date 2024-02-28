@@ -1,17 +1,17 @@
 package;
 
-import VFS.SongObject;
 import audio.Context;
 import audio.Sound;
 import elements.*;
 import haxe.Json;
-import js.html.Blob;
+import js.html.AudioElement;
 
 // idk if im dumb or smth but im adding another div inside the wrapper on a shadow element which the wrapper should be the shadow root but since i cannot add a shadow root in haxe i use a wrapper and im dumb and fuck
 class Main
 {
 	private static var context:Context;
-	public static var music:Sound = new Sound(); // force it to ONLY one sound playing, also empty for quick stuff lmao
+	public static var smusic:Sound = new Sound(); // force it to ONLY one sound playing, also empty for quick stuff lmao
+	public static var music:AudioElement = HTML.dom().createAudioElement();
 
 	public static var storage:VFS = new VFS();
 	private static var musicList:MList = new MList([]);
@@ -22,7 +22,21 @@ class Main
 		Console.debug(HTML.detectDevice());
 		ComboBox.visibleCheck();
 		HTML.dom().body.classList.add('mx-auto', 'my-auto', 'overflow-hidden');
+
+		music.controls = false;
+		music.loop = true;
+		music.addEventListener('timeupdate', () ->
+		{
+			HTML.updatePositionState({
+				duration: music.duration,
+				position: music.currentTime,
+				playbackRate: music.playbackRate
+			});
+		});
+		HTML.dom().body.append(music);
+
 		context = new Context();
+		context.bindTo(music);
 
 		BasicTransition.play((?_) ->
 		{
