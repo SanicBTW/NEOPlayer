@@ -26,7 +26,7 @@ class MEntry
 			container.style.width = "90%";
 		}
 
-		container.classList.add('flex', 'flex-row', 'h-[90px]', 'min-h-[90px]', 'rounded-xl', 'm-8', 'hover:cursor-pointer');
+		container.classList.add('flex', 'flex-row', 'min-h-[90px]', 'rounded-xl', 'm-8', 'hover:cursor-pointer');
 		container.style.transition = "var(--main-transition)";
 		container.style.backgroundColor = "hsl(var(--hue), var(--saturation), 30%)";
 		if (isSection)

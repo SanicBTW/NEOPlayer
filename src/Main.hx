@@ -19,6 +19,7 @@ class Main
 		Console.log("Hello!");
 		Console.debug(HTML.detectDevice());
 		ComboBox.visibleCheck();
+		Network.prepareSessionID();
 		HTML.dom().body.classList.add('mx-auto', 'my-auto', 'overflow-hidden');
 
 		#if debug

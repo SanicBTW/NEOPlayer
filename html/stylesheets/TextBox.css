@@ -1,11 +1,11 @@
-div
+.type-text-box div
 {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-input
+.type-text-box input
 {
     align-self: stretch;
     outline: none;
@@ -18,20 +18,20 @@ input
     border-radius: 2rem;
 }
 
-input:focus
+.type-text-box input:focus
 {
     border: 2px solid hsl(var(--hue), var(--saturation), var(--fg-pct));
     background-color: var(--accent);
 }
 
-label
+.type-text-box label
 {
     display: flex;
     flex-direction: column-reverse;
     align-self: stretch;
 }
 
-span
+.type-text-box span
 {
     margin: 0;
     transition: var(--main-transition);
@@ -43,7 +43,7 @@ span
     width: fit-content;
 }
 
-input[placeholder=" "]:not(:focus):placeholder-shown + span
+.type-text-box input[placeholder=" "]:not(:focus):placeholder-shown + span
 {
     transform: translateY(150%) scale(1.25);
     margin-left: 1rem;

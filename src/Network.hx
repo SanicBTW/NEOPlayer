@@ -14,10 +14,24 @@ typedef QueueObject =
 	var inProgress:Bool;
 }
 
+@:allow(YoutubeAPI)
 class Network
 {
 	private static var _cache:DynamicMap<String, Dynamic> = new DynamicMap<String, Dynamic>();
 	private static var _queue:DynamicMap<String, QueueObject> = new DynamicMap<String, QueueObject>();
+	private static var _sessionID:Int = -1;
+
+	public static function prepareSessionID()
+	{
+		if (_sessionID != -1)
+		{
+			Console.error('You may not generate a new Session ID in the current session!');
+			return;
+		}
+
+		_sessionID = Math.floor(Math.random() * 9999);
+		Console.debug('Your session ID $_sessionID');
+	}
 
 	private static function checkQueue(file:String):QueueObject
 	{

@@ -26,7 +26,7 @@ class Notification
 		container.style.transition = "var(--main-transition)";
 		container.style.opacity = "0";
 
-		image.classList.add('max-w-[80px]', 'max-h-[80px]', 'aspect-square', 'relative', 'pointer-events-none');
+		image.classList.add('max-w-[80px]', 'max-h-[80px]', 'relative', 'pointer-events-none');
 		image.src = img != null ? img : "assets/album-placeholder.png";
 
 		textContainer.classList.add('flex', 'flex-wrap', 'flex-col', 'relative', 'mx-6');

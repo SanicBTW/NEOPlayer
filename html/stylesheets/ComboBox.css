@@ -1,4 +1,4 @@
-.container
+.type-combo-box .container
 {
     display: flex;
     flex-direction: column;
@@ -7,7 +7,7 @@
 }
 
 /* extending goes brrr */
-.copycat1
+.type-combo-box .copycat1
 {
     z-index: var(--combobox-priorityZ);
     background-color: var(--background-accent);
@@ -17,14 +17,14 @@
     transition: var(--main-transition);
 }
 
-.header
+.type-combo-box .header
 {
     display: flex;
     cursor: pointer;
     align-self: stretch;
 }
 
-.list
+.type-combo-box .list
 {
     position: absolute;
     top: 0%;
@@ -33,7 +33,7 @@
     min-height: 50px;
 }
 
-.indicator
+.type-combo-box .indicator
 {
     width: 20px;
     height: 20px;
@@ -47,7 +47,7 @@
     color: var(--foreground-accent);
 }
 
-.entry
+.type-combo-box .entry
 {
     cursor: pointer;
     border: 2px solid var(--accent);

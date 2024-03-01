@@ -20,7 +20,7 @@ class MEntryTB extends MEntry
 			HTML.dom().body.removeChild(textBox.wrapper);
 			container.append(textBox.wrapper);
 
-			textBox.wrapper.style.width = textBox.container.style.width = "95%";
+			textBox.wrapper.style.width = "95%";
 			container.classList.remove('min-h-[90px]');
 			container.classList.add('min-h-[118px]');
 			textBox.input.addEventListener('change', () ->

@@ -1,6 +1,7 @@
 package;
 
 import VFS.SongObject;
+import YoutubeAPI;
 import audio.MediaMetadata;
 import elements.*;
 import haxe.Json;
@@ -43,6 +44,13 @@ class Entries
 					{
 						musicList.refresh(genUpload(musicList, file));
 					});
+				});
+			}),
+			new MEntry("Youtube Importer", () ->
+			{
+				BasicTransition.play((?_) ->
+				{
+					musicList.refresh(youtubeImporter(musicList));
 				});
 			}),
 			new MEntry('Import script'),
@@ -245,6 +253,135 @@ class Entries
 						throw res;
 					}
 				});
+			}),
+		];
+	}
+
+	public static function youtubeImporter(musicList:MList):Array<MEntry>
+	{
+		var target:Int = 2;
+		var steps:Int = 0;
+		var status:MEntry = new MEntry('Pending assets: $steps/$target', true);
+
+		var song:VFS.SongObject = {
+			name: "",
+			author: "",
+			data: null,
+			cover_art: null,
+			cover_background: null,
+			favourite: false
+		};
+
+		return [
+			new MEntry("Go back", () ->
+			{
+				BasicTransition.play((?_) ->
+				{
+					musicList.refresh(defaultEntries(musicList));
+				});
+			}),
+			new MEntryTB("Youtube Link", (link:String) ->
+			{
+				var id:String = "";
+				if (link.indexOf("youtu.be") > -1)
+				{
+					id = link.substring(link.lastIndexOf("/") + 1);
+					if (id.indexOf("?") > -1)
+						id = id.substring(0, id.indexOf("?"));
+				}
+
+				if (link.indexOf("youtube.com") > -1)
+				{
+					id = link.substring(link.indexOf("?") + 3);
+					if (id.indexOf("&") > -1)
+						id = id.substring(0, id.indexOf("&"));
+				}
+				YoutubeAPI._curID = id;
+			}),
+			status,
+			new MEntry("Done", () ->
+			{
+				if (YoutubeAPI._curID != null && YoutubeAPI._curID.length <= 0)
+					return;
+
+				// long ahh function bro
+				YoutubeAPI.getDetails(YoutubeAPI._curID).handle((det) ->
+				{
+					var infResp:InfoResponse = det.sure();
+
+					song.name = infResp.title;
+					song.author = infResp.author;
+
+					YoutubeAPI.getAudio(infResp.title).handle((pra) ->
+					{
+						var res:BlobResponse = pra.sure();
+						var data:Dynamic = res.data;
+						var blob:Blob = Network.bufferToBlob(data.b.buffer);
+						song.data = {
+							blob: blob,
+							mimeType: res.mimeType
+						};
+						steps++;
+						status.name.textContent = 'Pending assets: $steps/$target';
+					});
+
+					// force to wait for the thumbnail
+					var hdThumb:ThumbnailObject = infResp.thumbnails[infResp.thumbnails.length - 1]; // the last one is usually 1920x1080
+					YoutubeAPI.getThumbnail(hdThumb.url).handle((pri) ->
+					{
+						var res:BlobResponse = pri.sure();
+						var data:Dynamic = res.data;
+						var blob:Blob = Network.bufferToBlob(data.b.buffer);
+						song.cover_art = {
+							blob: blob,
+							mimeType: res.mimeType
+						};
+						steps++;
+						status.name.textContent = 'Pending assets: $steps/$target';
+					});
+				});
+
+				// dirty approach imo
+
+				function onFinish()
+				{
+					Main.storage.get(SONGS, song.name).handle((existCheck) ->
+					{
+						if (existCheck.sure() != null)
+							return;
+
+						Main.storage.set(SONGS, song.name, song).handle((sOut) ->
+						{
+							var res:Bool = sOut.sure();
+							if (res)
+							{
+								YoutubeAPI._curID = null;
+								BasicTransition.play((?_) ->
+								{
+									new Notification("Finished importing", 'New song',
+										(song.cover_art != null) ? URL.createObjectURL(song.cover_art.blob) : null);
+									musicList.refresh(defaultEntries(musicList));
+								});
+							}
+						});
+					});
+				}
+
+				function checkTick()
+				{
+					haxe.Timer.delay(() ->
+					{
+						if (steps == target)
+						{
+							onFinish();
+							return;
+						}
+
+						checkTick();
+					}, 1);
+				}
+
+				checkTick();
 			}),
 		];
 	}
