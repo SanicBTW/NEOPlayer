@@ -3,10 +3,11 @@
 // also this is my first time using express lmao, requires further testing but its already useful enough,
 // on newer versions there will be a search bar integrated to import songs automatically but for now the video id is required to be imported
 
+const sharp = require('sharp'); // 0.27.2 is required since my Linux Server doesnt meet the cpu requirements to use SSE4.2
 import fs from 'fs';
 import express from 'express';
 import cors from 'cors';
-import sharp from 'sharp';
+import ffmpeg from 'ffmpeg';
 import ytdl, { videoFormat, videoInfo } from 'ytdl-core';
 
 type ThumbnailObject = 
@@ -129,26 +130,33 @@ app.get("/get_audio", (req, res) =>
         var stream:fs.WriteStream = ytdl.downloadFromInfo(cache[sessionID]!, {quality: 'highestaudio', filter: 'audioonly'}).pipe(fs.createWriteStream(fileName));
         stream.addListener('finish', () =>
         {
-            try
+            new ffmpeg(fileName).then((r) =>
             {
-                res.sendFile(fileName, {root: __dirname}, (err) =>
+                r.fnExtractSoundToMP3(fileName.replace("webm", "mp3")).then((rfn) =>
                 {
-                    // it means it has finished sending the audio
-                    if (err == undefined)
+                    try
                     {
-                        fs.rmSync(fileName);
+                        res.sendFile(rfn, {root: __dirname}, (err) =>
+                        {
+                            // it means it has finished sending the audio
+                            if (err == undefined)
+                            {
+                                fs.rmSync(fileName);
+                                fs.rmSync(rfn);
+                            }
+                        });
                     }
-                });
-            }
-            catch (err)
-            {
-                res.status(500).send({error: 4, message: 'FileSystem Error'});
-            }
+                    catch (err)
+                    {
+                        res.status(500).send({error: 4, message: 'FileSystem Error'});
+                    }
 
-            // since the user is done with the data we can just wipe it
-            cache[sessionID] = null;
-            delete cache[sessionID];
-            delete ttl[sessionID];
+                    // since the user is done with the data we can just wipe it
+                    cache[sessionID] = null;
+                    delete cache[sessionID];
+                    delete ttl[sessionID];
+                });
+            });
         });
 
         return;
