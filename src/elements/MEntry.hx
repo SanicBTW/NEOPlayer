@@ -15,6 +15,7 @@ class MEntry
 	public function new(header:String, isSection:Bool = false, ?onClick:Void->Void)
 	{
 		// m-8 is 32px aka 2rem, the converted width is multiplied by 2 cuz 32 just substracts the base margin
+		var marginClass:String = "m-8";
 		if (HTML.detectDevice() == DESKTOP)
 		{
 			var listWidth:Int = Std.int(Styling.parsePX(Styling.getComputedRoot().getPropertyValue("--list-width")));
@@ -24,9 +25,10 @@ class MEntry
 		else
 		{
 			container.style.width = "90%";
+			marginClass = "m-5";
 		}
 
-		container.classList.add('flex', 'flex-row', 'min-h-[90px]', 'rounded-xl', 'm-8', 'hover:cursor-pointer');
+		container.classList.add('flex', 'flex-row', 'min-h-[90px]', 'rounded-xl', marginClass, 'hover:cursor-pointer');
 		container.style.transition = "var(--main-transition)";
 		container.style.backgroundColor = "hsl(var(--hue), var(--saturation), 30%)";
 		if (isSection)
