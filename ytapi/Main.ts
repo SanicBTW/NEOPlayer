@@ -27,7 +27,7 @@ type InfoResponse =
 }
 
 const app = express();
-app.use(cors());
+app.use(cors({origin: '*'}));
 
 const port:number = 7654;
 const cache:Record<number, videoInfo | null> = [];
