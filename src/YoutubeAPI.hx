@@ -36,7 +36,7 @@ class YoutubeAPI
 {
 	private static var _curID:Null<String> = null;
 
-	private static final apiURL:String = #if debug "http://127.0.0.1:7654" #else "https://ytapi.sancopublic.com/" #end;
+	private static final apiURL:String = #if debug "http://127.0.0.1:7654" #else "https://ytapi.sancopublic.com" #end;
 
 	// make enum you dumb fuck
 	private static final infoEndpoint:String = "/video_info";
