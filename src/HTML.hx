@@ -130,6 +130,11 @@ class HTML
 		});
 	}
 
+	public static function confirmation(message:String, onConfirm:Bool->Void)
+	{
+		Syntax.code("{0}(confirm({1}))", onConfirm, message);
+	}
+
 	public static function detectDevice():DeviceType
 		return ~/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/.match(Browser.navigator.userAgent) ? DeviceType.MOBILE : DeviceType.DESKTOP;
 }

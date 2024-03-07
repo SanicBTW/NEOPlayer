@@ -62,6 +62,14 @@ app.get("/", (req, res) =>
 // err code 4: fs error
 // err code 69: missing session id
 // err code 100: cant use the api
+// err code 420: alive :money_mouth:
+
+// add readline support for moving the api into maintenance and more stuff
+// frontend page soon for managing the api n look at the requests n shit lmao
+app.get("/health", (req, res) =>
+{
+    res.status(200).send({code: 420, message: "Alive"});
+});
 
 app.get('/video_info', (req, res) =>
 {

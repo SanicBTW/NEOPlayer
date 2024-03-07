@@ -1,17 +1,19 @@
 package elements;
 
+typedef ChangeEvent =
+{
+	var parent:ComboBox;
+	var name:String;
+	var value:String;
+	var index:Int;
+}
+
 // Basically MEntry but has a ComboBox inside of it
 class MEntryCB extends MEntry
 {
 	private var comboBox:ComboBox;
 
-	public function new(header:String, entries:Map<String, String>, onCreate:ComboBox->Void, onChange:
-		{
-			parent:ComboBox,
-			name:String,
-			value:String,
-			index:Int
-		}->Void)
+	public function new(header:String, entries:Map<String, String>, onCreate:ComboBox->Void, onChange:ChangeEvent->Void)
 	{
 		// the reason why i put true is cuz it centers stuff and disables some events
 		// maybe it will look weird ig

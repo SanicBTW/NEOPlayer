@@ -3,6 +3,7 @@ package;
 // TODO: Cleaner code and avoid copy pasting
 import haxe.Http;
 import haxe.ds.DynamicMap;
+import haxe.io.Bytes;
 import js.html.Blob;
 import js.lib.ArrayBuffer;
 
@@ -14,7 +15,10 @@ typedef QueueObject =
 	var inProgress:Bool;
 }
 
+// TODO - When finishing a request, return a struct with the Http var and the data
+
 @:allow(YoutubeAPI)
+@:allow(Endpoint)
 class Network
 {
 	private static var _cache:DynamicMap<String, Dynamic> = new DynamicMap<String, Dynamic>();
@@ -61,7 +65,7 @@ class Network
 		_queue.remove(file);
 	}
 
-	@async public static function loadString<T>(file:String):Promise<T>
+	@async public static function loadString(file:String):Promise<String>
 	{
 		var queueEntry:QueueObject = checkQueue(file);
 
@@ -86,13 +90,12 @@ class Network
 			req.onData = function(c)
 			{
 				_cache[file] = c;
-				resolve(cast c);
+				resolve(c);
 				cleanQueue(c, file, queueEntry);
 			}
 
 			req.onError = function(err)
 			{
-				Console.error(err);
 				reject(new Error(InternalError, err));
 			}
 
@@ -100,7 +103,7 @@ class Network
 		});
 	}
 
-	@async public static function loadBytes<T>(file:String):Promise<T>
+	@async public static function loadBytes(file:String):Promise<Bytes>
 	{
 		var queueEntry:QueueObject = checkQueue(file);
 
@@ -124,13 +127,12 @@ class Network
 			req.onBytes = function(c)
 			{
 				_cache[file] = c;
-				resolve(cast c);
+				resolve(c);
 				cleanQueue(c, file, queueEntry);
 			}
 
 			req.onError = function(err)
 			{
-				Console.error(err);
 				reject(new Error(InternalError, err));
 			}
 

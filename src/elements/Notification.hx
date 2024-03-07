@@ -27,7 +27,14 @@ class Notification
 		container.style.opacity = "0";
 
 		image.classList.add('max-w-[80px]', 'max-h-[80px]', 'relative', 'pointer-events-none');
-		image.src = img != null ? img : "assets/album-placeholder.png";
+
+		var endSrc:String = "./assets/album-placeholder.png";
+		@:privateAccess
+		if (Network._cache["./assets/album-placeholder.png"] != null)
+			endSrc = URL.createObjectURL(Network.bufferToBlob(cast(Network._cache["./assets/album-placeholder.png"], haxe.io.Bytes).b.buffer));
+		if (img != null)
+			endSrc = img;
+		image.src = endSrc;
 
 		textContainer.classList.add('flex', 'flex-wrap', 'flex-col', 'relative', 'mx-6');
 
@@ -58,10 +65,10 @@ class Notification
 				{
 					container.remove();
 
-					if (img != null && img.indexOf("blob") > -1)
+					if (endSrc.indexOf("blob") > -1)
 					{
-						URL.revokeObjectURL(img);
-						Console.debug('Revoked Image Blob URL ($img)');
+						URL.revokeObjectURL(endSrc);
+						Console.debug('Revoked Image Blob URL ($endSrc)');
 					}
 
 					HTML.window().clearTimeout(timer);

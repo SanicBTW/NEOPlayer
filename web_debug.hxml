@@ -5,11 +5,14 @@
 -D HXCPP_CHECK_POINTER
 -D HXCPP_STACK_LINE
 -D no-deprecation-warnings
+-D GATEWAY_DEBUG
+-D GATEWAY_LOOP_DEBUG
 
 --class-path src
 --main Main
 --js ./bin/web/Debug/Main.js
 
+--library HxDiscordGateway
 --library console.hx
 --library tink_await
 --library hscript

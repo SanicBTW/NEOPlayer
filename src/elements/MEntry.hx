@@ -55,7 +55,7 @@ class MEntry
 		}
 
 		name.classList.add('font-2xl', 'p-8');
-		name.textContent = header;
+		name.innerText = header;
 
 		container.append(name);
 	}

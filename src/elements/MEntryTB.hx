@@ -5,7 +5,7 @@ class MEntryTB extends MEntry
 {
 	private var textBox:TextBox;
 
-	public function new(header:String, onChange:String->Void)
+	public function new(header:String, onChange:String->Void, ?onCreate:TextBox->Void)
 	{
 		// the reason why i put true is cuz it centers stuff and disables some events
 		// maybe it will look weird ig
@@ -19,6 +19,8 @@ class MEntryTB extends MEntry
 		{
 			HTML.dom().body.removeChild(textBox.wrapper);
 			container.append(textBox.wrapper);
+			if (onCreate != null)
+				onCreate(textBox);
 
 			textBox.wrapper.style.width = "95%";
 			container.classList.remove('min-h-[90px]');

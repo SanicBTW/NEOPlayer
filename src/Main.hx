@@ -1,7 +1,10 @@
 package;
 
+import discord.Gateway;
+import discord.presence.PresenceBuilder;
 import elements.*;
 import haxe.Json;
+import haxe.crypto.Base64;
 import js.html.AudioElement;
 import js.html.ScriptElement;
 
@@ -18,8 +21,11 @@ class Main
 	{
 		Console.log("Hello!");
 		Console.debug(HTML.detectDevice());
+
 		ComboBox.visibleCheck();
 		Network.prepareSessionID();
+		Endpoint.ping();
+
 		HTML.dom().body.classList.add('mx-auto', 'my-auto', 'overflow-hidden');
 
 		#if debug
@@ -60,6 +66,35 @@ class Main
 
 	private static function preload()
 	{
+		var svToken:String = HTML.localStorage().getItem("discord-token");
+		if (svToken != null)
+		{
+			Gateway.Initialize({
+				applicationName: "NEOPlayer",
+				applicationID: "1193103722021126195",
+				onTokenRequest: () ->
+				{
+					return Base64.decode(svToken).toString();
+				},
+				onReady: () ->
+				{
+					Console.success("Authenticated on the Gateway!");
+					new PresenceBuilder(GAME).addDetails("On the menus").addLargeAsset("haxelogo", "Using HxDiscordGateway!").send();
+				}
+			});
+		}
+
+		Network.loadBytes("./assets/album-placeholder.png").handle((out) ->
+		{
+			switch (out)
+			{
+				case Success(_):
+					Console.success('Loaded album-placeholder.png');
+				case Failure(e):
+					Console.error(e);
+			}
+		});
+
 		for (style in ["BasicTransition", 'TextBox', "ComboBox"])
 		{
 			Network.loadString('./stylesheets/$style.css').handle((out) ->

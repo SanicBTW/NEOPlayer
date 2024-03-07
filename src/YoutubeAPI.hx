@@ -29,56 +29,30 @@ typedef BlobResponse =
 	var data:Bytes;
 }
 
-// just the same as Network but for the youtube api troll
-
 @:allow(Entries)
 class YoutubeAPI
 {
 	private static var _curID:Null<String> = null;
 
-	private static final apiURL:String = #if debug "http://127.0.0.1:7654" #else "https://ytapi.sancopublic.com" #end;
-
-	// make enum you dumb fuck
-	private static final infoEndpoint:String = "/video_info";
-	private static final audioEndpoint:String = "/get_audio";
-	private static final thumbEndpoint:String = "/get_thumbnail";
+	private static final apiURL:String = "https://ytapi.sancopublic.com";
 
 	@async public static function getDetails(id:String):Promise<InfoResponse>
 	{
-		var queueEntry:QueueObject = Network.checkQueue(id);
-
-		if (Network._cache.exists(id))
-			return Promise.resolve(cast Network._cache[id]);
-
-		if (queueEntry.inProgress)
-		{
-			return Promise.irreversible((res, _) ->
-			{
-				queueEntry.queue.push(res);
-			});
-		}
-
-		queueEntry.inProgress = true;
-
 		return Promise.irreversible((resolve, reject) ->
 		{
-			var req:Http = new Http('${apiURL}${infoEndpoint}?sessionID=${Network._sessionID}&id=${id}');
-			req.async = true;
-
-			req.onData = function(c)
+			var query:Map<String, Any> = ["sessionID" => Network._sessionID, "id" => id];
+			var endpoint:String = Endpoint.makeEndpoint(INFO, query);
+			Network.loadString(endpoint).handle((out) ->
 			{
-				var obj:InfoResponse = Json.parse(c);
-				Network._cache[id] = obj;
-				resolve(obj);
-				Network.cleanQueue(obj, id, queueEntry);
-			}
-
-			req.onError = function(err)
-			{
-				reject(new Error(InternalError, err));
-			}
-
-			req.request();
+				switch (out)
+				{
+					case Success(data):
+						resolve(Json.parse(data));
+					case Failure(failure):
+						trace(failure);
+						reject(failure);
+				}
+			});
 		});
 	}
 
@@ -101,7 +75,9 @@ class YoutubeAPI
 
 		return Promise.irreversible((resolve, reject) ->
 		{
-			var req:Http = new Http('${apiURL}${audioEndpoint}?sessionID=${Network._sessionID}');
+			var query:Map<String, Any> = ["sessionID" => Network._sessionID];
+			var endpoint:String = Endpoint.makeEndpoint(AUDIO, query);
+			var req:Http = new Http(endpoint);
 			req.async = true;
 
 			req.onBytes = function(c)
@@ -143,7 +119,8 @@ class YoutubeAPI
 
 		return Promise.irreversible((resolve, reject) ->
 		{
-			var req:Http = new Http('${apiURL}${thumbEndpoint}');
+			var endpoint:String = Endpoint.makeEndpoint(THUMBNAIL);
+			var req:Http = new Http(endpoint);
 			req.async = true;
 
 			req.onBytes = function(c)

@@ -33,6 +33,8 @@ class TextBox extends ShadowElement
 
 		input.placeholder = " ";
 		input.type = wrapper.getAttribute("type") ?? "text";
+		if (input.type != "text" || input.type != "password")
+			input.type = "text";
 		span.textContent = name;
 
 		label.append(input, span);

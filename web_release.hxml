@@ -8,6 +8,7 @@
 --main Main
 --js ./bin/web/Release/Main.js
 
+--library HxDiscordGateway
 --library console.hx
 --library tink_await
 --library hscript
