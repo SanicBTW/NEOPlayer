@@ -18,7 +18,7 @@ class MEntry
 		var marginClass:String = "m-8";
 		if (HTML.detectDevice() == DESKTOP)
 		{
-			var listWidth:Int = Std.int(Styling.parsePX(Styling.getComputedRoot().getPropertyValue("--list-width")));
+			var listWidth:Int = Std.int(Styling.parsePX(Styling.getComputedRootVar(LIST_WIDTH)));
 			var convertedWidth:Int = listWidth - (32 * 2);
 			container.classList.add('w-[${convertedWidth}px]');
 		}

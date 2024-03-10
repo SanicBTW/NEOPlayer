@@ -1,18 +1,22 @@
 package;
 
+import audio.Context;
+import audio.Sound;
+import core.LifeCycle;
 import discord.Gateway;
 import discord.presence.PresenceBuilder;
 import elements.*;
 import haxe.Json;
+import haxe.Resource;
 import haxe.crypto.Base64;
-import js.html.AudioElement;
 import js.html.ScriptElement;
 
 // idk if im dumb or smth but im adding another div inside the wrapper on a shadow element which the wrapper should be the shadow root but since i cannot add a shadow root in haxe i use a wrapper and im dumb and fuck
-// had to move from AudioContext to AudioElement for a lot of reasons
 class Main
 {
-	public static var music:AudioElement = HTML.dom().createAudioElement();
+	public static var context:Context = new Context();
+	public static var sound:Sound = new Sound();
+	public static var notification:Notification = new Notification();
 
 	public static var storage:VFS = new VFS();
 	private static var musicList:MList = new MList([]);
@@ -20,8 +24,10 @@ class Main
 	public static function main()
 	{
 		Console.log("Hello!");
+		Console.success('NEOPlayer V${Resource.getString("version")} (From Resource)');
 		Console.debug(HTML.detectDevice());
 
+		LifeCycle.initialize();
 		ComboBox.visibleCheck();
 		Network.prepareSessionID();
 		Endpoint.ping();
@@ -41,11 +47,6 @@ class Main
 			HTML.dom().head.append(eruda);
 		}
 		#end
-
-		music.controls = false;
-		music.loop = true;
-		HTML.addMusicListeners(music);
-		HTML.dom().body.append(music);
 
 		preload();
 
@@ -113,8 +114,8 @@ class Main
 		if (rawInfo != null)
 		{
 			var info:{hue:String, saturation:String} = Json.parse(rawInfo);
-			Styling.setRootVarValue(HUE, info.hue);
-			Styling.setRootVarValue(SATURATION, info.saturation);
+			Styling.setRootVar(HUE, info.hue);
+			Styling.setRootVar(SATURATION, info.saturation);
 		}
 
 		// This will get deleted after creating a new one
@@ -126,7 +127,7 @@ class Main
 	// opps in da hood
 	private static function dbOps()
 	{
-		musicList.refresh(Entries.defaultEntries(musicList));
-		new Notification("Database", "Connected");
+		musicList.refresh(Entries.defaultEntries());
+		Notification.show("Database", "Connected");
 	}
 }

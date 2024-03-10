@@ -18,12 +18,18 @@
     --default-margin: auto 0.25rem 0.25rem auto;
     --textbox-offset: 0.625;
 
+    /* Scrolling animation */
+    --scroll-time: 7.5s;
+    --scroll-delay: 1s;
+    --scroll-length: -100%;
+
     /* Misc */
     --font-family: "Roboto Flex";
     --main-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --combobox-priorityZ: 1;
     --combobox-topZ: 2;
     --list-width: 660px;
+    --topmost: 2147483647;
 }
 
 *
@@ -109,4 +115,36 @@ iframe
     display: flex;
     width: 100%;
     border: none;
+}
+
+.notransition 
+{
+    -webkit-transition: none !important;
+    -moz-transition: none !important;
+    -o-transition: none !important;
+    transition: none !important;
+}
+
+.scroll
+{
+    white-space: nowrap;
+    animation: bounce-scroll var(--scroll-time) 1;
+    animation-delay: var(--scroll-delay);
+    z-index: -1;
+}
+
+@keyframes bounce-scroll
+{
+    0%
+    {
+        transform: translateX(0);
+    }
+    50%
+    {
+        transform: translateX(var(--scroll-length));
+    }
+    100%
+    {
+        transform: translateX(0);
+    }
 }

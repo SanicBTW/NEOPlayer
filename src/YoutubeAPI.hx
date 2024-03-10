@@ -34,8 +34,6 @@ class YoutubeAPI
 {
 	private static var _curID:Null<String> = null;
 
-	private static final apiURL:String = "https://ytapi.sancopublic.com";
-
 	@async public static function getDetails(id:String):Promise<InfoResponse>
 	{
 		return Promise.irreversible((resolve, reject) ->

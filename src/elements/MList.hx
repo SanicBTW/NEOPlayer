@@ -14,7 +14,7 @@ class MList
 		// 'items-flex-start' pending to check
 		if (HTML.detectDevice() == DESKTOP)
 		{
-			container.classList.add('w-[${Styling.getComputedRoot().getPropertyValue("--list-width")}]');
+			container.classList.add('w-[${Styling.getComputedRootVar(LIST_WIDTH)}]');
 			container.style.margin = "4rem";
 		}
 		else

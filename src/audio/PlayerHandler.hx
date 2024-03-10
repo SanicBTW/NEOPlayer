@@ -1,5 +1,6 @@
 package audio;
 
+import audio.MediaMetadata.MediaHandler;
 import discord.presence.PresenceBuilder;
 
 // TODO: Webworkers for updating in the background
@@ -9,28 +10,54 @@ class PlayerHandler
 
 	public static function play()
 	{
-		new PresenceBuilder(LISTENING).addDetails('Playing ${Main.music.getAttribute("musicname")}')
-			.addState('by ${Main.music.getAttribute("musicauthor")}')
-			.send();
-		Main.music.play();
+		var name:String = Sound.element.getAttribute("musicname");
+		var author:String = Sound.element.getAttribute("musicauthor");
+
+		new PresenceBuilder(LISTENING).addDetails('Playing $name').addState('by $author').send();
+
+		Sound.element.play();
 	}
 
 	public static function pause()
 	{
-		new PresenceBuilder(LISTENING).addDetails('Paused ${Main.music.getAttribute("musicname")}')
-			.addState('by ${Main.music.getAttribute("musicauthor")}')
-			.send();
-		Main.music.pause();
+		var name:String = Sound.element.getAttribute("musicname");
+		var author:String = Sound.element.getAttribute("musicauthor");
+
+		new PresenceBuilder(LISTENING).addDetails('Paused $name').addState('by $author').send();
+
+		Sound.element.pause();
 	}
 
 	// have the seek offset in count?
 	public static function seekBackward()
 	{
-		Main.music.currentTime = Math.max(Main.music.currentTime - skipTime, 0);
+		Sound.element.currentTime = Math.max(Sound.element.currentTime - skipTime, 0);
 	}
 
 	public static function seekForward()
 	{
-		Main.music.currentTime = Math.min(Main.music.currentTime + skipTime, Main.music.duration);
+		Sound.element.currentTime = Math.min(Sound.element.currentTime + skipTime, Sound.element.duration);
+	}
+
+	public static function getHandlers():Array<MediaHandler>
+	{
+		return [
+			{
+				type: PLAY,
+				func: () -> play()
+			},
+			{
+				type: PAUSE,
+				func: () -> pause()
+			},
+			{
+				type: SEEK_BACKWARD,
+				func: () -> seekBackward()
+			},
+			{
+				type: SEEK_FORWARD,
+				func: () -> seekForward()
+			}
+		];
 	}
 }

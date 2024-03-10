@@ -4,6 +4,8 @@
 -D HXCPP_STACK_LINE
 -D no-deprecation-warnings
 
+--resource VERSION@version
+
 --class-path src
 --main Main
 --js ./bin/web/Release/Main.js

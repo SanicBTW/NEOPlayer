@@ -1,5 +1,7 @@
 package elements;
 
+import core.LifeCycle;
+import core.TimerObject;
 import js.html.DivElement;
 
 class CallbackStack
@@ -33,11 +35,12 @@ class CallbackStack
 	}
 }
 
+// Testing is required, moved to the new TimerObject system and i don't know if its working as intended
 class BasicTransition extends ShadowElement
 {
 	public static var isTransitioning:Bool = false;
-	public static var time:Int = 1500;
-	private static var _timer:Null<Int> = null;
+	public static var time:Int = 75;
+	private static var timer:TimerObject = null;
 	private static var cbStack:CallbackStack = new CallbackStack();
 	private static var instance:BasicTransition = null;
 
@@ -82,21 +85,21 @@ class BasicTransition extends ShadowElement
 
 		isTransitioning = true;
 
-		_timer = HTML.window().setTimeout(() ->
+		timer = LifeCycle.timer(time, (?_) ->
 		{
 			tInst.container.style.top = "-100dvh";
 			cbStack.dispatch();
-			HTML.window().clearTimeout(_timer);
 
 			isTransitioning = false;
 			if (autoOverflow)
 				HTML.dom().body.style.overflow = "initial";
-		}, time);
+		});
 	}
 
 	private static function reset(after:?Any->Void)
 	{
-		HTML.window().clearTimeout(_timer);
+		if (timer != null)
+			timer.cancel();
 		isTransitioning = false;
 		play(after);
 	}

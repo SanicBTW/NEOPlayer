@@ -1,20 +1,21 @@
 package audio;
 
-import js.html.AudioElement;
 import js.html.audio.AudioContext;
+import js.html.audio.AudioContextState;
 import js.html.audio.MediaElementAudioSourceNode;
-import js.html.audio.MediaStreamAudioDestinationNode;
 
+// Make it modular or sum shit
 @:allow(audio.Sound)
 class Context
 {
 	private static var _ctx:AudioContext;
-
-	private var _srcNode:MediaElementAudioSourceNode;
-	private var _dstNode:MediaStreamAudioDestinationNode;
+	private static var _source:MediaElementAudioSourceNode;
 
 	public function new()
 	{
+		if (HTML.isIOS())
+			return;
+
 		_ctx = new AudioContext();
 		Console.debug("Opening AudioContext");
 
@@ -26,7 +27,7 @@ class Context
 
 		HTML.dom().addEventListener('click', () ->
 		{
-			if (_ctx.state == SUSPENDED)
+			if (_ctx.state == AudioContextState.SUSPENDED)
 			{
 				Console.debug("AudioContext Resumed!");
 				_ctx.resume();
@@ -34,12 +35,13 @@ class Context
 		});
 	}
 
-	public function bindTo(element:AudioElement)
+	public function close()
 	{
-		_srcNode = _ctx.createMediaElementSource(element);
-		_dstNode = _ctx.createMediaStreamDestination();
+		_source.disconnect();
 
-		_srcNode.connect(_dstNode);
-		element.srcObject = _dstNode.stream;
+		_ctx.close().then((_) ->
+		{
+			Console.success("Closed Audio Context");
+		});
 	}
 }

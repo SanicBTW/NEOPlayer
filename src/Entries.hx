@@ -3,22 +3,49 @@ package;
 import VFS.SongObject;
 import YoutubeAPI;
 import audio.*;
+import core.LifeCycle;
 import discord.Gateway;
 import elements.*;
 import haxe.Json;
+import haxe.Resource;
 import haxe.crypto.Base64;
 import haxe.ds.DynamicMap;
 import haxe.io.Bytes;
 import js.Syntax;
 import js.html.Blob;
 import js.html.File;
-import js.html.SourceElement;
 import js.html.URL;
 
 // Class dedicated to generate entries for the list
+// I should rewrite this and make it modular ngl
 class Entries
 {
-	public static function defaultEntries(musicList:MList):Array<MEntry>
+	private static var list(get, null):MList;
+
+	@:noCompletion
+	private static function get_list():MList
+	{
+		@:privateAccess
+		return Main.musicList;
+	}
+
+	// dummy
+	public static function generateBack(name:String = "Go back", func:Void->Array<MEntry> = null):MEntry
+	{
+		// dirtiest workaround lmao
+		if (func == null)
+			func = defaultEntries;
+
+		return new MEntry(name, () ->
+		{
+			BasicTransition.play((?_) ->
+			{
+				list.refresh(func());
+			});
+		});
+	}
+
+	public static function defaultEntries():Array<MEntry>
 	{
 		return [
 			new MEntry("List Songs", () ->
@@ -33,14 +60,14 @@ class Entries
 				BasicTransition.play((?_) ->
 				{
 					if (songs != null)
-						musicList.refresh(buildFromMap(musicList, songs));
+						list.refresh(buildFromMap(songs));
 				});
 			}),
 			new MEntry("Import Providers", () ->
 			{
 				BasicTransition.play((?_) ->
 				{
-					musicList.refresh(importOptions(musicList));
+					list.refresh(importOptions());
 				});
 			}),
 			new MEntry('Import script'),
@@ -48,30 +75,22 @@ class Entries
 			{
 				BasicTransition.play((?_) ->
 				{
-					musicList.refresh(getSettings(musicList));
+					list.refresh(getSettings());
 				});
 			}),
 			new MEntry("About", () ->
 			{
 				BasicTransition.play((?_) ->
 				{
-					musicList.refresh(getAbout(musicList));
+					list.refresh(getAbout());
 				});
 			})
 		];
 	}
 
-	public static function importOptions(musicList:MList):Array<MEntry>
+	public static function importOptions():Array<MEntry>
 	{
-		var ret:Array<MEntry> = [
-			new MEntry("Go back", () ->
-			{
-				BasicTransition.play((?_) ->
-				{
-					musicList.refresh(defaultEntries(musicList));
-				});
-			})
-		];
+		var ret:Array<MEntry> = [generateBack()];
 
 		ret.push(new MEntry('Local Import', () ->
 		{
@@ -82,11 +101,12 @@ class Entries
 			{
 				BasicTransition.play((?_) ->
 				{
-					musicList.refresh(genUpload(musicList, file));
+					list.refresh(genUpload(file));
 				});
 			});
 		}));
 
+		// improve this, since the public api is always returning 502 bad gateway and some other times it works fine i have to find an alternative way to host the api n shit :sob
 		if (Endpoint.ONLINE)
 		{
 			ret.push(new MEntry("Import from Youtube", () ->
@@ -96,7 +116,7 @@ class Entries
 
 				BasicTransition.play((?_) ->
 				{
-					musicList.refresh(youtubeImporter(musicList));
+					list.refresh(youtubeImporter());
 				});
 			}));
 		}
@@ -104,17 +124,10 @@ class Entries
 		return ret;
 	}
 
-	public static function buildFromMap(musicList:MList, map:DynamicMap<String, Any>):Array<MEntry>
+	// check if its playing or if its the same entry and play/pause depending on the state
+	public static function buildFromMap(map:DynamicMap<String, Any>):Array<MEntry>
 	{
-		var ret:Array<MEntry> = [
-			new MEntry("Go back", () ->
-			{
-				BasicTransition.play((?_) ->
-				{
-					musicList.refresh(defaultEntries(musicList));
-				});
-			})
-		];
+		var ret:Array<MEntry> = [generateBack()];
 
 		for (name => song in map)
 		{
@@ -126,53 +139,13 @@ class Entries
 
 			var entry:MEntry = new MEntry(name, () ->
 			{
-				var srcEl:SourceElement = HTML.dom().createSourceElement();
-
-				if (Main.music.firstElementChild != null)
-				{
-					var objURL:String = Main.music.firstElementChild.getAttribute("objurl");
-					Main.music.pause();
-					URL.revokeObjectURL(objURL);
-					Console.debug('Revoked Audio Blob URL ($objURL)');
-
-					var copycat = Main.music.cloneNode();
-					Main.music.replaceWith(copycat);
-					Main.music = cast copycat;
-					HTML.addMusicListeners(Main.music);
-				}
-
-				srcEl.src = URL.createObjectURL(song.data.blob);
-				srcEl.type = song.data.mimeType;
-				srcEl.setAttribute("objurl", srcEl.src);
-				Main.music.setAttribute("musicname", song.name);
-				Main.music.setAttribute("musicauthor", song.author);
-				Main.music.append(srcEl);
-				PlayerHandler.play();
-
-				new Notification('Playing ${name}', 'by ${song.author}', (song.cover_art != null) ? URL.createObjectURL(song.cover_art.blob) : null);
+				Main.sound.play(song);
 
 				var meta:MediaMetadata = {
 					title: name,
 					author: song.author,
 					artwork: [],
-					handlers: [
-						{
-							type: PLAY,
-							func: () -> PlayerHandler.play()
-						},
-						{
-							type: PAUSE,
-							func: () -> PlayerHandler.pause()
-						},
-						{
-							type: SEEK_BACKWARD,
-							func: () -> PlayerHandler.seekBackward()
-						},
-						{
-							type: SEEK_FORWARD,
-							func: () -> PlayerHandler.seekForward()
-						}
-					]
+					handlers: PlayerHandler.getHandlers()
 				};
 
 				if (song.cover_art != null)
@@ -199,7 +172,7 @@ class Entries
 		return ret;
 	}
 
-	public static function genUpload(musicList:MList, file:File):Array<MEntry>
+	public static function genUpload(file:File):Array<MEntry>
 	{
 		var songData:SongObject = {
 			name: "",
@@ -223,14 +196,10 @@ class Entries
 		Syntax.code("new Response({0}.stream()).blob().then((blob) => { {1}(blob) })", file, songConvertDone);
 
 		return [
-			new MEntry("Cancel import", () ->
+			generateBack("Cancel Import", () ->
 			{
 				songData = null;
-				Console.debug("User canceled the song import");
-				BasicTransition.play((?_) ->
-				{
-					musicList.refresh(defaultEntries(musicList));
-				});
+				return importOptions();
 			}),
 			new MEntry("Song Metadata", true),
 			new MEntryTB("Name", (name:String) ->
@@ -285,9 +254,9 @@ class Entries
 					{
 						BasicTransition.play((?_) ->
 						{
-							new Notification("Finished importing", 'New song',
+							Notification.show("Finished importing", 'New song',
 								(songData.cover_art != null) ? URL.createObjectURL(songData.cover_art.blob) : null);
-							musicList.refresh(defaultEntries(musicList));
+							list.refresh(defaultEntries());
 						});
 					}
 					else
@@ -299,7 +268,7 @@ class Entries
 		];
 	}
 
-	public static function youtubeImporter(musicList:MList):Array<MEntry>
+	public static function youtubeImporter():Array<MEntry>
 	{
 		var target:Int = 2;
 		var steps:Int = 0;
@@ -315,12 +284,10 @@ class Entries
 		};
 
 		return [
-			new MEntry("Go back", () ->
+			generateBack("Back to Import Providers", () ->
 			{
-				BasicTransition.play((?_) ->
-				{
-					musicList.refresh(defaultEntries(musicList));
-				});
+				YoutubeAPI._curID = null;
+				return importOptions();
 			}),
 			new MEntryTB("Youtube Link", (link:String) ->
 			{
@@ -400,45 +367,34 @@ class Entries
 								YoutubeAPI._curID = null;
 								BasicTransition.play((?_) ->
 								{
-									new Notification("Finished importing", 'New song',
+									Notification.show("Finished importing", 'New song',
 										(song.cover_art != null) ? URL.createObjectURL(song.cover_art.blob) : null);
-									musicList.refresh(defaultEntries(musicList));
+									list.refresh(defaultEntries());
 								});
 							}
 						});
 					});
 				}
 
-				function checkTick()
+				LifeCycle.add((_) ->
 				{
-					haxe.Timer.delay(() ->
+					if (steps == target)
 					{
-						if (steps == target)
-						{
-							onFinish();
-							return;
-						}
+						onFinish();
+						return STOPPED;
+					}
 
-						checkTick();
-					}, 1);
-				}
-
-				checkTick();
+					return RUNNING;
+				});
 			}),
 		];
 	}
 
 	// formatting for sure is killing my eyes
-	public static function getSettings(musicList:MList):Array<MEntry>
+	public static function getSettings():Array<MEntry>
 	{
 		return [
-			new MEntry("Go back", () ->
-			{
-				BasicTransition.play((?_) ->
-				{
-					musicList.refresh(defaultEntries(musicList));
-				});
-			}),
+			generateBack(),
 			// More flexible system soon??? (Custom paths n more!! - maybe with the modding support being able to change some routes, that would be sick)
 			new MEntry("API Settings", true),
 			new MEntryTB("Youtube API Endpoint", function(newEnd:String)
@@ -462,7 +418,7 @@ class Entries
 				Please, proceed with caution, you can always remove your token afterwards
 			", true),
 
-			new MEntryTB("User Token", function(token:String)
+			new MEntryTB("User Token (Hidden)", function(token:String)
 			{
 				HTML.confirmation("Are you sure you want to set your Discord User Token?\nThis will show a Rich Presence in your Discord Profile\nOnce you press \"OK\" the page will refresh and a connection to\nthe Discord Gateway will be established",
 					(state:Bool) ->
@@ -475,8 +431,16 @@ class Entries
 					});
 			}, function(tb)
 			{
+				// made it like this so the DOM stops complaining about the fucking input type password not in a form warning
 				@:privateAccess
-				tb.input.type = "password";
+				{
+					tb.input.classList.add("password");
+					tb.input.placeholder = "";
+					tb.input.ondrag = tb.input.ondrop = tb.input.ondragstart = (ev) ->
+					{
+						ev.preventDefault();
+					}
+				}
 
 				var svToken:String = HTML.localStorage().getItem("discord-token");
 				if (svToken == null)
@@ -486,12 +450,15 @@ class Entries
 			}),
 			new MEntry("Remove Token", () ->
 			{
+				if (HTML.localStorage().getItem("discord-token") == null)
+					return;
+
 				HTML.localStorage().removeItem("discord-token");
 				Gateway.Shutdown();
-				haxe.Timer.delay(() ->
+				LifeCycle.timer(15, (?_) ->
 				{
 					HTML.window().location.reload();
-				}, 15);
+				});
 			}),
 			new MEntry('Preset Themes', true),
 			new MEntryCB('Current preset: default', Styling.themes, function(cb)
@@ -517,8 +484,8 @@ class Entries
 				var values:Array<String> = ev.value.split("|");
 				var hue:String = values[0].split(":")[1];
 				var sat:String = values[1].split(":")[1];
-				Styling.setRootVarValue(HUE, hue);
-				Styling.setRootVarValue(SATURATION, sat);
+				Styling.setRootVar(HUE, hue);
+				Styling.setRootVar(SATURATION, sat);
 				HTML.localStorage().setItem("chosen-preset", Std.string(ev.index));
 				HTML.localStorage().setItem("theme-info", Json.stringify({hue: hue, saturation: sat}));
 			}),
@@ -528,7 +495,7 @@ class Entries
 		];
 	}
 
-	public static function getAbout(musicList:MList):Array<MEntry>
+	public static function getAbout():Array<MEntry>
 	{
 		var strUsage:MEntry = new MEntry("Storage Usage: ?", true);
 
@@ -565,13 +532,36 @@ class Entries
 			strUsage.name.textContent = 'Storage Usage: ${size} ${VFS.intervalArray[idx]}';
 		});
 
+		// instead of manually setting the state outside the ticker, wait for the go back entry to be pressed and set the flag that will return STOPPED on the tickers
+		// ok i did that
+		var shouldStop:Bool = false;
+		var fpsStat:MEntry = new MEntry("FPS: ?", true);
+		LifeCycle.add((_) ->
+		{
+			if (shouldStop)
+				return STOPPED;
+
+			@:privateAccess
+			fpsStat.name.textContent = 'FPS: ${Math.ceil(LifeCycle.fps)}';
+			return RUNNING;
+		});
+
+		var ticksStat:MEntry = new MEntry("Ticks: ?", true);
+		LifeCycle.add((_) ->
+		{
+			if (shouldStop)
+				return STOPPED;
+
+			@:privateAccess
+			ticksStat.name.textContent = 'Ticks: ${LifeCycle.ticks}';
+			return RUNNING;
+		});
+
 		return [
-			new MEntry("Go back", () ->
+			generateBack(() ->
 			{
-				BasicTransition.play((?_) ->
-				{
-					musicList.refresh(defaultEntries(musicList));
-				});
+				shouldStop = true;
+				return defaultEntries();
 			}),
 			new MEntry("IndexedDB Stats", true),
 			strUsage,
@@ -598,7 +588,11 @@ class Entries
 							HTML.window().location.reload();
 						});
 					});
-			})
+			}),
+			new MEntry("LifeCycle Stats", true),
+			fpsStat,
+			ticksStat,
+			new MEntry('NEOPlayer V${Resource.getString("version")}', true)
 		];
 	}
 }

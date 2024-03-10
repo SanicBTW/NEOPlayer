@@ -137,4 +137,7 @@ class HTML
 
 	public static function detectDevice():DeviceType
 		return ~/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/.match(Browser.navigator.userAgent) ? DeviceType.MOBILE : DeviceType.DESKTOP;
+
+	public static function isIOS():Bool
+		return ~/iPhone|iPad|iPod/.match(Browser.navigator.userAgent);
 }

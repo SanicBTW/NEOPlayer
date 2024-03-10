@@ -8,6 +8,8 @@
 -D GATEWAY_DEBUG
 -D GATEWAY_LOOP_DEBUG
 
+--resource VERSION@version
+
 --class-path src
 --main Main
 --js ./bin/web/Debug/Main.js

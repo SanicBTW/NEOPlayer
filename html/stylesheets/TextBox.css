@@ -24,6 +24,21 @@
     background-color: var(--accent);
 }
 
+.type-text-box input.password
+{
+    background-color: var(--foreground-accent);
+}
+
+.type-text-box input.password::selection
+{
+    background: transparent;
+}
+
+.type-text-box input.password::-moz-selection
+{
+    background: transparent;
+}
+
 .type-text-box label
 {
     display: flex;
@@ -41,6 +56,11 @@
     display: flex;
     flex: 1;
     width: fit-content;
+}
+
+.type-text-box input::placeholder
+{
+    color: transparent;
 }
 
 .type-text-box input[placeholder=" "]:not(:focus):placeholder-shown + span
