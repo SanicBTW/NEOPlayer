@@ -26,13 +26,16 @@ typedef SongObject =
 	var cover_background:BlobObject;
 	var author:String;
 	var favourite:Bool;
+	var created_at:Date;
+	var source:String;
 }
 
 typedef ScriptObject =
 {
 	var name:String;
-	var data:Blob;
+	var data:BlobObject;
 	var source:String;
+	var created_at:Date;
 }
 
 class VFS
@@ -46,7 +49,10 @@ class VFS
 	private var version:Int;
 	private var created:Bool = false;
 
-	public function new(version:Int = 2)
+	// Only set when the Database Update adds or removes fields from the Tables to avoid issues with the new support
+	private var updateEntries:Map<Tables, Bool> = new Map();
+
+	public function new(version:Int = 3)
 	{
 		this.version = version;
 	}
@@ -73,36 +79,56 @@ class VFS
 			request.addEventListener('upgradeneeded', (ev) ->
 			{
 				var db:Database = ev.target.result;
+				var txn:Transaction = ev.target.transaction;
 				var oldVersion:Int = ev.oldVersion;
 				var newVersion:Int = ev.newVersion;
 				Console.debug('Version $oldVersion -> Version $newVersion');
 
-				// For some reason on iOS the upgrade is not working lmao
-				/*
-					if (db.objectStoreNames.contains(Tables.SONGS))
+				if (db.objectStoreNames.contains(Tables.SONGS))
+				{
+					// I don't think people still have the v1 so we aint gonna update entries
+					if (oldVersion == 1 && newVersion == 2)
 					{
-						if (oldVersion == 1 && newVersion == 2)
-						{
-							var transaction:Transaction = db.transaction(Tables.SONGS, READONLY);
-							transaction.objectStore(Tables.SONGS).deleteIndex("size");
-							Console.success('Updated the Database to $newVersion');
-						}
-				}*/
+						txn.objectStore(Tables.SONGS).deleteIndex("size");
+						Console.success('Updated Song Table to v2');
+					}
+
+					if (oldVersion == 2 && newVersion == 3)
+					{
+						txn.objectStore(Tables.SONGS).createIndex("created_at", "created_at");
+						txn.objectStore(Tables.SONGS).createIndex("source", "source"); // scripts already had this lmao
+						Console.success('Updated Song Table to v3');
+						updateEntries[Tables.SONGS] = true;
+					}
+				}
+
+				if (db.objectStoreNames.contains(Tables.SCRIPTS))
+				{
+					if (oldVersion == 2 && newVersion == 3)
+					{
+						txn.objectStore(Tables.SCRIPTS).createIndex("created_at", "created_at");
+						Console.success('Updated Script Table to v3');
+						updateEntries[Tables.SCRIPTS] = true;
+					}
+				}
 
 				if (!db.objectStoreNames.contains(Tables.SONGS))
 				{
 					var store:ObjectStore = db.createObjectStore(Tables.SONGS);
 
-					store.createIndex('author', 'author'); // String - author or artist
+					store.createIndex('author', 'author'); // String, author or artist
 					store.createIndex('favourite', 'favourite'); // Bool, sort favs??
+					store.createIndex("created_at", "created_at"); // Date, for sorting
+					store.createIndex("source", "source"); // String, origin of the song
 				}
 
 				if (!db.objectStoreNames.contains(Tables.SCRIPTS))
 				{
-					// experimental, uses hscript, maybe if i do Luau bindings for JS ill add it too, but I want to make the bindings for native too
+					// experimental, uses hscript soon it will use SlangZen
 					var store:ObjectStore = db.createObjectStore(Tables.SCRIPTS);
 
 					store.createIndex('source', 'source'); // From where it is
+					store.createIndex("created_at", "created_at"); // Date, for sorting
 				}
 			});
 
@@ -112,6 +138,13 @@ class VFS
 				HTML.localStorage().removeItem("idb-del-time");
 				connection = request.result;
 				created = true;
+
+				if (updateEntries[Tables.SONGS])
+					migrateV3(SONGS);
+
+				if (updateEntries[Tables.SCRIPTS])
+					migrateV3(SCRIPTS);
+
 				resolve(this);
 			});
 		});
@@ -230,5 +263,40 @@ class VFS
 	public function destroy():Void
 	{
 		connection.close();
+	}
+
+	private function migrateV3(table:Tables)
+	{
+		entries(table).handle((out) ->
+		{
+			var entr:DynamicMap<String, Any> = cast out.sure();
+			for (name => entry in entr)
+			{
+				Reflect.setProperty(entry, "created_at", Date.now());
+				if (table == SONGS)
+					Reflect.setProperty(entry, "source", "Local");
+
+				trace(entry);
+
+				set(table, name, entry).handle((out) ->
+				{
+					Console.success('Migrated $name from $table (${out.sure()})');
+				});
+			}
+		});
+	}
+
+	public static function makeEmptySong():SongObject
+	{
+		return {
+			name: "",
+			data: null,
+			cover_art: null,
+			cover_background: null,
+			author: "",
+			favourite: false,
+			created_at: Date.now(),
+			source: ""
+		};
 	}
 }

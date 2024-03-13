@@ -127,7 +127,24 @@ class Entries
 	// check if its playing or if its the same entry and play/pause depending on the state
 	public static function buildFromMap(map:DynamicMap<String, Any>):Array<MEntry>
 	{
-		var ret:Array<MEntry> = [generateBack()];
+		// map shit is useless here i think
+		var filterCb:MEntryCB = new MEntryCB("Sort by", [
+			"Recently Added" => "recently",
+			"Alphabetical order" => "alphabet",
+			"Origin" => "source",
+			"Favourites" => "favourite",
+			"Author" => "author"
+		], function(cb)
+		{
+			@:privateAccess
+			cb.wrapper.setAttribute("selectedindex", "0");
+			trace("sup");
+		}, function(ev)
+		{
+			trace(ev);
+		});
+
+		var ret:Array<MEntry> = [generateBack(), filterCb];
 
 		for (name => song in map)
 		{
@@ -174,14 +191,7 @@ class Entries
 
 	public static function genUpload(file:File):Array<MEntry>
 	{
-		var songData:SongObject = {
-			name: "",
-			data: null,
-			cover_art: null,
-			cover_background: null,
-			author: "",
-			favourite: false
-		};
+		var songData:SongObject = VFS.makeEmptySong();
 
 		function songConvertDone(blob:Blob)
 		{
@@ -247,6 +257,19 @@ class Entries
 			}),
 			new MEntry("Finish", () ->
 			{
+				if (songData.cover_art == null)
+				{
+					// only set if found on cache (most likely)
+					@:privateAccess
+					if (Network._cache["./assets/legacy-album.png"] != null)
+					{
+						songData.cover_art = {
+							blob: Network.bufferToBlob(cast(Network._cache["./assets/legacy-album.png"], haxe.io.Bytes).b.buffer),
+							mimeType: "image/png"
+						};
+					}
+				}
+
 				Main.storage.set(SONGS, songData.name, songData).handle((out) ->
 				{
 					var res:Bool = out.sure();
@@ -274,14 +297,7 @@ class Entries
 		var steps:Int = 0;
 		var status:MEntry = new MEntry('Pending assets: $steps/$target', true);
 
-		var song:VFS.SongObject = {
-			name: "",
-			author: "",
-			data: null,
-			cover_art: null,
-			cover_background: null,
-			favourite: false
-		};
+		var song:VFS.SongObject = VFS.makeEmptySong();
 
 		return [
 			generateBack("Back to Import Providers", () ->
@@ -335,6 +351,7 @@ class Entries
 					});
 
 					// force to wait for the thumbnail
+					// should improve race conditions, last day it failed to get the thumbnail but could continue anyway, will need to do more testing or move to a websocket
 					var hdThumb:ThumbnailObject = infResp.thumbnails[infResp.thumbnails.length - 1]; // the last one is usually 1920x1080
 					YoutubeAPI.getThumbnail(hdThumb.url).handle((pri) ->
 					{
