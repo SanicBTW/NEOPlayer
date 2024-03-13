@@ -138,9 +138,14 @@ class Entries
 		{
 			@:privateAccess
 			cb.wrapper.setAttribute("selectedindex", "0");
-			trace("sup");
+			map = cast Utils.dateMapSort(cast map, true);
 		}, function(ev)
 		{
+			if (ev.value == "recently")
+			{
+				// me when using DynamicMap and not Map (im fucking dumb)
+				map = cast Utils.dateMapSort(cast map, true);
+			}
 			trace(ev);
 		});
 
@@ -264,10 +269,10 @@ class Entries
 				{
 					// only set if found on cache (most likely)
 					@:privateAccess
-					if (Network._cache["./assets/legacy-album.png"] != null)
+					if (Network._cache["./assets/album-placeholder.png"] != null)
 					{
 						songData.cover_art = {
-							blob: Network.bufferToBlob(cast(Network._cache["./assets/legacy-album.png"], haxe.io.Bytes).b.buffer),
+							blob: Network.bufferToBlob(cast(Network._cache["./assets/album-placeholder.png"], haxe.io.Bytes).b.buffer),
 							mimeType: "image/png"
 						};
 					}
@@ -522,7 +527,6 @@ class Entries
 		Main.storage.entries(SONGS).handle((out) ->
 		{
 			var size:Float = 0;
-			var idx:Int = 0;
 			var data:DynamicMap<String, Any> = out.sure();
 			for (name => song in data)
 			{
@@ -541,15 +545,12 @@ class Entries
 					size += song.cover_background.blob.size;
 			}
 
-			while (size > 1000 && idx < VFS.intervalArray.length - 1)
-			{
-				idx++;
-				size = size / 1000;
-			}
-			size = Math.round(size * 100) / 100;
+			var mem = Utils.parseSize(size);
 
 			@:privateAccess
-			strUsage.name.textContent = 'Storage Usage: ${size} ${VFS.intervalArray[idx]}';
+			strUsage.name.textContent = 'Storage Usage: ${mem.size} ${mem.unit}';
+
+			mem = null;
 		});
 
 		// instead of manually setting the state outside the ticker, wait for the go back entry to be pressed and set the flag that will return STOPPED on the tickers

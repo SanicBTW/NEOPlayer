@@ -41,6 +41,7 @@ typedef ScriptObject =
 class VFS
 {
 	public static final intervalArray:Array<String> = ['B', 'KB', 'MB', 'GB'];
+	public static final mbSize:Float = 1024;
 	public static final name:String = "S_VirtualFS";
 
 	private var request:OpenDBRequest;

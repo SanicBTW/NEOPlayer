@@ -52,6 +52,8 @@ class LifeCycle implements IDebugComponent
 		// needed, might move to instance for Main.loop.<func>
 		new LifeCycle();
 		ui.add(instance); // no way
+		if (HTML.onChrome())
+			ui.add(new MemoryDebug());
 		#end
 
 		initialized = true;

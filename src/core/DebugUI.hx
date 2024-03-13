@@ -31,7 +31,7 @@ class DebugUI
 
 	public function new()
 	{
-		view.classList.add("fixed", "bottom-0", "left-0", "opacity-50", "m-4", "text-left");
+		view.classList.add("fixed", "bottom-0", "left-0", "opacity-50", "m-4", "text-left", "pointer-events-none");
 		view.style.zIndex = "var(--topmost)";
 
 		HTML.dom().body.append(view);

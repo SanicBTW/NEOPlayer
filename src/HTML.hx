@@ -140,4 +140,8 @@ class HTML
 
 	public static function isIOS():Bool
 		return ~/iPhone|iPad|iPod/.match(Browser.navigator.userAgent);
+
+	// dummy
+	public static function onChrome():Bool
+		return ~/Chrome/.match(Browser.navigator.userAgent);
 }

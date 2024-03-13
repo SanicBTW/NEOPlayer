@@ -24,7 +24,7 @@ class Main
 	public static function main()
 	{
 		Console.log("Hello!");
-		Console.success('NEOPlayer V${Resource.getString("version")} (From Resource)');
+		Console.log('NEOPlayer V${Resource.getString("version")} (From Resource)');
 		Console.debug(HTML.detectDevice());
 
 		LifeCycle.initialize();

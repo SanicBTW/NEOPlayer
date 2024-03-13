@@ -6,6 +6,8 @@ iOS can't use AudioContext because if one is created the whole MediaSession incl
 
 Also on iOS there's this weird thing where the scroll animation makes the outline disappear until the animation is finished
 
+Start caring about ram usage :sob:
+
 Moved to Haxe because of a project I'm doing for HTML5 (A Virtual FileSystem for my Friday Night Funkin' Engine to support modding and more stuff).
 
 Though it's slightly modified, I'm learning from it to hopefully make a stable release of it.
