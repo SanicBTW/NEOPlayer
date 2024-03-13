@@ -85,21 +85,16 @@ class Main
 			});
 		}
 
-		// first is the new one that will show across the page
-		// the second one will be the placeholder for when the imported song doesnt have a cover
-		for (image in ["album-placeholder", "legacy-album"])
+		Network.loadBytes('./assets/album-placeholder.png').handle((out) ->
 		{
-			Network.loadBytes('./assets/$image.png').handle((out) ->
+			switch (out)
 			{
-				switch (out)
-				{
-					case Success(_):
-						Console.success('Loaded $image.png');
-					case Failure(e):
-						Console.error(e);
-				}
-			});
-		}
+				case Success(_):
+					Console.success('Loaded album-placeholder.png');
+				case Failure(e):
+					Console.error(e);
+			}
+		});
 
 		for (style in ["BasicTransition", 'TextBox', "ComboBox"])
 		{

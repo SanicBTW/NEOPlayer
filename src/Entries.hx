@@ -144,7 +144,10 @@ class Entries
 			trace(ev);
 		});
 
-		var ret:Array<MEntry> = [generateBack(), filterCb];
+		var ret:Array<MEntry> = [generateBack()];
+
+		if (map.length() >= 2)
+			ret.push(filterCb);
 
 		for (name => song in map)
 		{
