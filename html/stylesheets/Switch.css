@@ -1,0 +1,55 @@
+/* for me porting to haxe, calculate the px to transofmr x in the code and set it to a root var inside the element */
+
+/* or event better, have fixed sizes lmao but fr tho i should make it dynamic or sum shit :sob: */
+
+.type-switch label /* switch container */
+{
+    position: relative;
+    display: inline-block;
+    width: 60px; /* should start using inherit more whenever i can instead of inheritFromParent([styles]) :clown:  */
+    height: 34px; /* to look gud */
+    transition: var(--main-transition);
+}
+
+.type-switch input[type="checkbox"] /* da thing */
+{
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.type-switch .slider /* slider */
+{
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--accent);
+    border-radius: 34px;
+    transition: var(--main-transition);
+}
+
+.type-switch .handle /* the circle thing */
+{
+    pointer-events: none;
+    position: absolute;
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: var(--foreground-accent);
+    border-radius: 50%;
+    transition: var(--main-transition);
+}
+
+.type-switch input[type="checkbox"]:checked + .slider
+{
+    background-color: hsl(var(--hue), var(--saturation), 40%); /* thinkning between 40 and 30 mmm */
+}
+
+.type-switch input[type="checkbox"]:checked + .slider + .handle
+{
+    transform: translateX(26px);
+}

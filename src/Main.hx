@@ -96,7 +96,7 @@ class Main
 			}
 		});
 
-		for (style in ["BasicTransition", 'TextBox', "ComboBox"])
+		for (style in ["BasicTransition", 'TextBox', "ComboBox", "Switch"])
 		{
 			Network.loadString('./stylesheets/$style.css').handle((out) ->
 			{
