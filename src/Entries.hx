@@ -9,7 +9,6 @@ import elements.*;
 import haxe.Json;
 import haxe.Resource;
 import haxe.crypto.Base64;
-import haxe.ds.DynamicMap;
 import haxe.io.Bytes;
 import js.Syntax;
 import js.html.Blob;
@@ -50,7 +49,7 @@ class Entries
 		return [
 			new MEntry("List Songs", () ->
 			{
-				var songs:DynamicMap<String, Any> = null;
+				var songs:Map<String, Any> = null;
 				Main.storage.entries(SONGS).handle((out) ->
 				{
 					songs = out.sure();
@@ -125,34 +124,9 @@ class Entries
 	}
 
 	// check if its playing or if its the same entry and play/pause depending on the state
-	public static function buildFromMap(map:DynamicMap<String, Any>):Array<MEntry>
+	public static function buildFromMap(map:Map<String, Any>):Array<MEntry>
 	{
-		// map shit is useless here i think
-		var filterCb:MEntryCB = new MEntryCB("Sort by", [
-			"Recently Added" => "recently",
-			"Alphabetical order" => "alphabet",
-			"Origin" => "source",
-			"Favourites" => "favourite",
-			"Author" => "author"
-		], function(cb)
-		{
-			@:privateAccess
-			cb.wrapper.setAttribute("selectedindex", "0");
-			map = cast Utils.dateMapSort(cast map, true);
-		}, function(ev)
-		{
-			if (ev.value == "recently")
-			{
-				// me when using DynamicMap and not Map (im fucking dumb)
-				map = cast Utils.dateMapSort(cast map, true);
-			}
-			trace(ev);
-		});
-
 		var ret:Array<MEntry> = [generateBack()];
-
-		if (map.length() >= 2)
-			ret.push(filterCb);
 
 		for (name => song in map)
 		{
@@ -527,7 +501,7 @@ class Entries
 		Main.storage.entries(SONGS).handle((out) ->
 		{
 			var size:Float = 0;
-			var data:DynamicMap<String, Any> = out.sure();
+			var data:Map<String, Any> = out.sure();
 			for (name => song in data)
 			{
 				// its the last one anyways lmao

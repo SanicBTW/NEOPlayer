@@ -1,6 +1,5 @@
 package;
 
-import haxe.ds.DynamicMap;
 import js.html.Blob;
 import js.html.idb.*;
 
@@ -220,14 +219,14 @@ class VFS
 		});
 	}
 
-	@async public function entries(table:Tables):Promise<DynamicMap<String, Any>>
+	@async public function entries(table:Tables):Promise<Map<String, Any>>
 	{
 		if (!created)
 			return Promise.reject(new Error(InternalError, "Database not connected yet"));
 
 		return Promise.irreversible((resolve, reject) ->
 		{
-			var tempMap:DynamicMap<String, Any> = new DynamicMap();
+			var tempMap:Map<String, Any> = new Map();
 			var length:Int = 0;
 
 			var res:Request = connection.transaction(table, READONLY).objectStore(table).openKeyCursor();
@@ -270,7 +269,7 @@ class VFS
 	{
 		entries(table).handle((out) ->
 		{
-			var entr:DynamicMap<String, Any> = cast out.sure();
+			var entr:Map<String, Any> = cast out.sure();
 			for (name => entry in entr)
 			{
 				Reflect.setProperty(entry, "created_at", Date.now());

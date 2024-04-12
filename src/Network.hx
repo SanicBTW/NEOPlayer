@@ -2,7 +2,6 @@ package;
 
 // TODO: Cleaner code and avoid copy pasting
 import haxe.Http;
-import haxe.ds.DynamicMap;
 import haxe.io.Bytes;
 import js.html.Blob;
 import js.lib.ArrayBuffer;
@@ -21,8 +20,8 @@ typedef QueueObject =
 @:allow(Endpoint)
 class Network
 {
-	private static var _cache:DynamicMap<String, Dynamic> = new DynamicMap<String, Dynamic>();
-	private static var _queue:DynamicMap<String, QueueObject> = new DynamicMap<String, QueueObject>();
+	private static var _cache:Map<String, Dynamic> = new Map<String, Dynamic>();
+	private static var _queue:Map<String, QueueObject> = new Map<String, QueueObject>();
 	private static var _sessionID:Int = -1;
 
 	public static function prepareSessionID()

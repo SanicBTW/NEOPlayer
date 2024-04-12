@@ -19,7 +19,7 @@ class Main
 	public static var notification:Notification = new Notification();
 
 	public static var storage:VFS = new VFS();
-	private static var musicList:MList = new MList([]);
+	public static var musicList:MList = new MList([]);
 
 	public static function main()
 	{
