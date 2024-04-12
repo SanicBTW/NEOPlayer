@@ -59,7 +59,7 @@ class MEntry
 	{
 		if (HTML.detectDevice() == DESKTOP || VisualViewport.width > Main.musicList.minWidth)
 		{
-			container.style.width = "92%";
+			container.style.width = "91%";
 			container.classList.remove("m-5");
 
 			container.classList.add('w-[${convertedWidth}px]');
